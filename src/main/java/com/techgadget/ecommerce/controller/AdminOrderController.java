@@ -1,7 +1,7 @@
 package com.techgadget.ecommerce.controller;
 
 import com.techgadget.ecommerce.dto.request.OrderFilterRequest;
-import com.techgadget.ecommerce.dto.request.UpdateOrderStatusRequest;
+import com.techgadget.ecommerce.dto.request.UpdateOrderStatusToShipRequest;
 import com.techgadget.ecommerce.dto.response.OrderResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.service.OrderService;
@@ -64,17 +64,47 @@ public class AdminOrderController {
     }
 
     /**
-     * Update order status
+     * Update order status to ship
      */
-    @PatchMapping("/{orderId}/status")
-    public ResponseEntity<OrderResponse> updateOrderStatus(
+    @PatchMapping("/{orderId}/ship")
+    public ResponseEntity<OrderResponse> updateOrderStatusToShip(
             @PathVariable Long orderId,
-            @Valid @RequestBody UpdateOrderStatusRequest request
+            @Valid @RequestBody UpdateOrderStatusToShipRequest request
     ) {
 
         OrderResponse response = orderService
-                .updateOrderStatus(orderId, request.getStatus());
+                .updateOrderStatusToShip(orderId, request);
 
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Update order status to complete
+     */
+    @PatchMapping("/{orderId}/complete")
+    public ResponseEntity<OrderResponse> updateOrderStatusToComplete(
+            @PathVariable Long orderId
+    ) {
+
+        OrderResponse response = orderService
+                .updateOrderStatusToComplete(orderId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Update order status to cancel
+     */
+    @PatchMapping("/{orderId}/cancel")
+    public ResponseEntity<OrderResponse> updateOrderStatusToCancel(
+            @PathVariable Long orderId
+    ) {
+
+        OrderResponse response = orderService
+                .updateOrderStatusToCancel(orderId);
+
+        return ResponseEntity.ok(response);
+    }
+
+
 }

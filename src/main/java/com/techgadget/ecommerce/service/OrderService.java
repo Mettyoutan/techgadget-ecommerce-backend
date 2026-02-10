@@ -1,9 +1,11 @@
 package com.techgadget.ecommerce.service;
 
 import com.techgadget.ecommerce.domain.OrderStatus;
+import com.techgadget.ecommerce.domain.PaymentMethod;
 import com.techgadget.ecommerce.domain.PaymentStatus;
 import com.techgadget.ecommerce.dto.request.CreateOrderRequest;
 import com.techgadget.ecommerce.dto.request.OrderFilterRequest;
+import com.techgadget.ecommerce.dto.request.UpdateOrderStatusToShipRequest;
 import com.techgadget.ecommerce.dto.response.AddressResponse;
 import com.techgadget.ecommerce.dto.response.OrderResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
@@ -36,6 +38,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
     private final ProductRepository productRepository;
+    private final PaymentRepository paymentRepository;
 
     // -------------------------
     // --- CUSTOMER METHODS ---
@@ -153,8 +156,7 @@ public class OrderService {
         Order order = new Order(
                 user,
                 generateOrderNumber(userId),
-                shippingAddress,
-                request.getPaymentMethod()
+                shippingAddress
         );
 
         log.debug("9 success");
@@ -167,6 +169,33 @@ public class OrderService {
 
         orderRepository.save(order);
 
+        log.debug("10 success");
+
+        // 11. Create Payment and save
+        PaymentMethod paymentMethod;
+        try {
+            paymentMethod = PaymentMethod.valueOf(request.getPaymentMethod().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid payment method selected = {}", request.getPaymentMethod());
+            throw new BadRequestException("Invalid payment method: " + request.getPaymentMethod());
+        }
+
+        Payment payment = new Payment();
+        payment.setOrder(order);
+        payment.setAmount(order.getTotalPrice());
+        payment.setPaymentStatus(PaymentStatus.PENDING);
+        payment.setPaymentMethod(paymentMethod);
+
+        paymentRepository.save(payment);
+
+        log.debug("11 success");
+
+        // 12. Set the payment to Order Entity
+        order.setPayment(payment);
+        orderRepository.save(order);
+
+        log.debug("12 success");
+
         // Get order with all relation
         Order finalOrder = orderRepository
                 .findUserOrderByIdWithRelation(order.getId(), userId)
@@ -175,16 +204,9 @@ public class OrderService {
                     return new NotFoundException("Order not found.");
                 });
 
-        log.debug("10 success");
 
         log.info("Successfully created order with id = {}. User id = {}. Total items = {}",
                 finalOrder.getId(), userId, finalOrder.getTotalItems());
-
-        log.debug("DEBUG orderStatus={}, paymentStatus={}, itemsSize={}, addressNull={}",
-                order.getOrderStatus(),
-                order.getPaymentStatus(),
-                order.getItems() != null ? order.getItems().size() : null,
-                order.getShippingAddress() == null);
 
         return mapToOrderResponse(finalOrder);
     }
@@ -217,42 +239,12 @@ public class OrderService {
         }
 
         order.setOrderStatus(OrderStatus.CANCELLED);
-        order.setPaymentStatus(PaymentStatus.FAILED);
+        order.getPayment().setPaymentStatus(PaymentStatus.FAILED);
 
         orderRepository.save(order);
 
         log.info("Successfully cancelled order with id = {} and user id = {}. Stock restored",
                 orderId, userId);
-
-        return mapToOrderResponse(order);
-    }
-
-    /**
-     * Using DUMMY payment
-     * After payment success, mark order as PAID and CONFIRMED
-     * Order is CONFIRMED
-     */
-    @Transactional
-    public OrderResponse markOrderPaid(Long userId, Long orderId) {
-
-        Order order = orderRepository.findUserOrderByIdWithRelation(orderId, userId)
-                .orElseThrow(() -> {
-                    log.warn("Order not found with id = {} and user id = {}", orderId, userId);
-                    return new NotFoundException("Order not found with id = " + orderId);
-                });
-
-        if (order.getOrderStatus() != OrderStatus.PENDING) {
-            log.warn("Cannot cancel order with id {} because status is {}",
-                    orderId, order.getOrderStatus());
-            throw new ConflictException("Only PENDING order can be cancelled");
-        }
-
-        order.setPaymentStatus(PaymentStatus.PAID);
-        order.setOrderStatus(OrderStatus.CONFIRMED);
-
-        orderRepository.save(order);
-
-        log.info("Order id = {} marked as PAID and COMPLETED by user id = {}", orderId, userId);
 
         return mapToOrderResponse(order);
     }
@@ -431,16 +423,14 @@ public class OrderService {
         return mapToOrderResponse(order);
     }
 
+    /**
+     * Update order status to ship
+     */
     @Transactional
-    public OrderResponse updateOrderStatus(Long orderId, String orderStatus) {
+    public OrderResponse updateOrderStatusToShip(Long orderId, UpdateOrderStatusToShipRequest request) {
+        log.info("Admin is updating order status to ship - order id = {}", orderId);
 
-        OrderStatus status;
-        try {
-            status = OrderStatus.valueOf(orderStatus.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid order status: {}", orderStatus);
-            throw new BadRequestException("Invalid order status.");
-        }
+        OrderStatus targetStatus = OrderStatus.SHIPPED;
 
         Order order = orderRepository
                 .findOrderByIdWithRelationForAdmin(orderId)
@@ -449,7 +439,80 @@ public class OrderService {
                     return new NotFoundException("Order not found.");
                 });
 
-        order.setOrderStatus(status);
+        // Check if the current order status can be transitioned
+        OrderStatus currentStatus = order.getOrderStatus();
+
+        if (!currentStatus.canTransitionTo(targetStatus)) {
+            log.warn("Invalid status transition from {} to {} for order id = {}",
+                    targetStatus, currentStatus, orderId);
+            throw new ConflictException("Cannot change order status from " +
+                    currentStatus + " to " + targetStatus);
+        }
+
+        // Set order status & add some shipping order information
+        order.setOrderStatus(targetStatus);
+        order.setShippingProvider(request.getShippingProvider());
+        order.setTrackingNumber(request.getTrackingNumber());
+
+        orderRepository.save(order);
+
+        return mapToOrderResponse(order);
+    }
+
+    /**
+     * Update order status to complete
+     */
+    @Transactional
+    public OrderResponse updateOrderStatusToComplete(Long orderId) {
+
+        OrderStatus targetStatus = OrderStatus.COMPLETED;
+
+        Order order = orderRepository
+                .findOrderByIdWithRelationForAdmin(orderId)
+                .orElseThrow(() -> {
+                    log.warn("Order not found with id = {}", orderId);
+                    return new NotFoundException("Order not found.");
+                });
+
+        // Check if the current order status can be transitioned
+        OrderStatus currentStatus = order.getOrderStatus();
+
+        if (!currentStatus.canTransitionTo(targetStatus)) {
+            log.warn("Invalid status transition from {} to {} for order id = {}",
+                    targetStatus, currentStatus, orderId);
+            throw new ConflictException("Cannot change order status from " +
+                    currentStatus + " to " + targetStatus);
+        }
+
+        order.setOrderStatus(targetStatus);
+        orderRepository.save(order);
+
+        return mapToOrderResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse updateOrderStatusToCancel(Long orderId) {
+
+        OrderStatus targetStatus = OrderStatus.CANCELLED;
+
+        Order order = orderRepository
+                .findOrderByIdWithRelationForAdmin(orderId)
+                .orElseThrow(() -> {
+                    log.warn("Order not found with id = {}", orderId);
+                    return new NotFoundException("Order not found.");
+                });
+
+        // Check if the current order status can be transitioned
+        OrderStatus currentStatus = order.getOrderStatus();
+
+        if (!currentStatus.canTransitionTo(targetStatus)) {
+            log.warn("Invalid status transition from {} to {} for order id = {}",
+                    targetStatus, currentStatus, orderId);
+            throw new ConflictException("Cannot change order status from " +
+                    currentStatus + " to " + targetStatus);
+        }
+
+        order.setOrderStatus(targetStatus);
         orderRepository.save(order);
 
         return mapToOrderResponse(order);
@@ -483,7 +546,7 @@ public class OrderService {
         log.debug("set order number");
         response.setOrderStatus(order.getOrderStatus().toString());
         log.debug("set order status");
-        response.setPaymentStatus(order.getPaymentStatus().toString());
+        response.setPaymentStatus(order.getPayment().getPaymentStatus().toString());
         log.debug("set payment status");
         response.setTotalItems(order.getTotalItems());
         log.debug("set total items");

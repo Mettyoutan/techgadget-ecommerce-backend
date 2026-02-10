@@ -18,19 +18,24 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     /**
      * Get order by id with
      * - items
+     * - payment
      * - products
      * - shipping address
      */
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.id = :orderId " +
             "and o.user.id = :userId")
-    Optional<Order> findUserOrderByIdWithRelation(@Param("orderId") Long orderId, @Param("userId") Long userId);
+    Optional<Order> findUserOrderByIdWithRelation(
+            @Param("orderId") Long orderId,
+            @Param("userId") Long userId
+    );
 
     /**
-     * Find all user orders with relation (items and products)
+     * Find all user orders with relation
      * -
      *  Filtering by:
      * - orderStatus
@@ -39,6 +44,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.user.id = :userId " +
@@ -62,6 +68,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.user.id = :userId " +
@@ -81,6 +88,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.user.id = :userId " +
@@ -102,6 +110,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.user.id = :userId " +
@@ -116,6 +125,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.orderNumber = :orderNumber " +
@@ -133,6 +143,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus)" )
@@ -143,6 +154,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus) " +
@@ -157,6 +169,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus) " +
@@ -169,6 +182,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus) " +
@@ -181,6 +195,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("select o from Order o " +
             "left join fetch o.shippingAddress " +
+            "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.id = :orderId")

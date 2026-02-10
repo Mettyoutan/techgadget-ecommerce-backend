@@ -7,6 +7,7 @@ import com.techgadget.ecommerce.dto.response.OrderResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.security.CustomUserDetails;
 import com.techgadget.ecommerce.service.OrderService;
+import com.techgadget.ecommerce.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final PaymentService paymentService;
 
     /**
      * Create order from selected cart items.
@@ -84,8 +86,8 @@ public class OrderController {
         // TODO: Create PaymentService
 
         // After payment successes, MARK order
-        OrderResponse response = orderService
-                .markOrderPaid(userDetails.getUserId(), orderId);
+        OrderResponse response = paymentService
+                .payOrder(userDetails.getUserId(), orderId);
 
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

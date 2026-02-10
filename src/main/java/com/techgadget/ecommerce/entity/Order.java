@@ -54,28 +54,17 @@ public class Order extends Auditable {
     @JoinColumn(name = "address_id", nullable = false)
     private Address shippingAddress;
 
-    /**
-     * Payment status is always pending when created
-     * Till payment happen
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Payment payment;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private PaymentMethod paymentMethod;
+    private String shippingProvider;
 
-    public Order(User user, String orderNumber, Address shippingAddress, String paymentMethod) {
+    private String trackingNumber;
+
+    public Order(User user, String orderNumber, Address shippingAddress) {
         this.user = user;
         this.orderNumber = orderNumber;
         this.shippingAddress = shippingAddress;
-        try {
-            this.paymentMethod = PaymentMethod.valueOf(paymentMethod.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid PaymentMethod.");
-        }
-
     }
 
     public void addItem(OrderItem orderItem) {
