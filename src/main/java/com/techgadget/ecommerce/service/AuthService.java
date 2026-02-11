@@ -3,6 +3,7 @@ package com.techgadget.ecommerce.service;
 import com.techgadget.ecommerce.dto.request.LoginRequest;
 import com.techgadget.ecommerce.dto.request.RegisterRequest;
 import com.techgadget.ecommerce.dto.response.AuthResponse;
+import com.techgadget.ecommerce.dto.response.UserResponse;
 import com.techgadget.ecommerce.entity.User;
 import com.techgadget.ecommerce.exception.ConflictException;
 import com.techgadget.ecommerce.exception.NotFoundException;
@@ -53,14 +54,14 @@ public class AuthService {
         log.info("User registered: id={}", user.getId());
 
         // Build response
-        AuthResponse.UserDto userDto = new AuthResponse.UserDto(
+        UserResponse userRes = new UserResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getFullName()
         );
 
-        return new AuthResponse("Registration Successful.", token, userDto);
+        return new AuthResponse("Registration Successful.", token, userRes);
     }
 
     @Transactional
@@ -90,13 +91,13 @@ public class AuthService {
         log.info("User logged in: id={}", user.getId());
 
         // Build response
-        AuthResponse.UserDto userDto = new AuthResponse.UserDto(
+        UserResponse userRes = new UserResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getFullName()
         );
 
-        return new AuthResponse("Login Successful.", token, userDto);
+        return new AuthResponse("Login Successful.", token, userRes);
     }
 }

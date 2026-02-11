@@ -12,7 +12,7 @@ import java.util.Objects;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ProductReview {
+public class ProductReview extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,6 +21,10 @@ public class ProductReview {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
@@ -32,8 +36,9 @@ public class ProductReview {
     @Column(nullable = false, length = 500)
     private String comment;
 
-    public ProductReview(User user, Product product, Integer rating, String comment) {
+    public ProductReview(User user, Order order, Product product, Integer rating, String comment) {
         this.user = user;
+        this.order = order;
         this.product = product;
         this.rating = rating;
         this.comment = comment;

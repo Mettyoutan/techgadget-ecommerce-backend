@@ -42,7 +42,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * - fromDate
      * - toDate
      */
-    @Query("select o from Order o " +
+    @Query(
+            value = "select o from Order o " +
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
@@ -50,7 +51,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "where o.user.id = :userId " +
             "and (:orderStatus is null or o.orderStatus = :orderStatus) " +
             "and o.createdAt >= :fromDate " +
-            "and o.createdAt <= :toDate ")
+            "and o.createdAt <= :toDate ",
+            countQuery = """
+                select count(o) from Order o
+                where o.user.id = :userId
+                and (:orderStatus is null or o.orderStatus = :orderStatus)
+                and o.createdAt >= :fromDate
+                and o.createdAt <= :toDate
+                """
+    )
     Page<Order> findUserOrdersBetweenDateWithRelation(
             @Param("userId") Long userId,
             @Param("orderStatus") OrderStatus orderStatus,
@@ -66,13 +75,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * - orderStatus
      * WITHOUT any date range
      */
-    @Query("select o from Order o " +
+    @Query(
+            value = "select o from Order o " +
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.user.id = :userId " +
-            "and (:orderStatus is null or o.orderStatus = :orderStatus) ")
+            "and (:orderStatus is null or o.orderStatus = :orderStatus)",
+            countQuery = """
+                select count(o) from Order o
+                where o.user.id = :userId
+                and (:orderStatus is null or o.orderStatus = :orderStatus)
+                """
+    )
     Page<Order> findUserOrdersWithRelation(
             @Param("userId") Long userId,
             @Param("orderStatus") OrderStatus orderStatus,
@@ -86,14 +102,22 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * - orderStatus
      * - fromDate
      */
-    @Query("select o from Order o " +
+    @Query(
+            value = "select o from Order o " +
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.user.id = :userId " +
             "and (:orderStatus is null or o.orderStatus = :orderStatus) " +
-            "and o.createdAt >= :fromDate " )
+            "and o.createdAt >= :fromDate ",
+            countQuery = """
+                select count(o) from Order o
+                where o.user.id = :userId
+                and (:orderStatus is null or o.orderStatus = :orderStatus)
+                and o.createdAt >= :fromDate
+                """
+    )
     Page<Order> findUserOrdersFromDateWithRelation(
             @Param("userId") Long userId,
             @Param("orderStatus") OrderStatus orderStatus,
@@ -108,14 +132,22 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * - orderStatus
      * - toDate
      */
-    @Query("select o from Order o " +
+    @Query(
+            value = "select o from Order o " +
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where o.user.id = :userId " +
             "and (:orderStatus is null or o.orderStatus = :orderStatus) " +
-            "and o.createdAt <= :toDate " )
+            "and o.createdAt <= :toDate ",
+            countQuery = """
+                select count(o) from Order o
+                where o.user.id = :userId
+                and (:orderStatus is null or o.orderStatus = :orderStatus)
+                and o.createdAt <= :toDate
+                """
+    )
     Page<Order> findUserOrdersToDateWithRelation(
             @Param("userId") Long userId,
             @Param("orderStatus") OrderStatus orderStatus,
@@ -141,25 +173,39 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     long countByUser_Id(Long userId);
 
 
-    @Query("select o from Order o " +
+    @Query(
+            value = "select o from Order o " +
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
-            "where (:orderStatus is null or o.orderStatus = :orderStatus)" )
+            "where (:orderStatus is null or o.orderStatus = :orderStatus)",
+            countQuery = """
+                select count(o) from Order o
+                where (:orderStatus is null or o.orderStatus = :orderStatus)
+                """
+    )
     Page<Order> findAllOrdersWithRelation(
             @Param("orderStatus") OrderStatus orderStatus,
             Pageable pageable
     );
 
-    @Query("select o from Order o " +
+    @Query(
+            value = "select o from Order o " +
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus) " +
             "and o.createdAt >= :fromDate " +
-            "and o.createdAt <= :toDate ")
+            "and o.createdAt <= :toDate ",
+            countQuery = """
+                select count(o) from Order o
+                where (:orderStatus is null or o.orderStatus = :orderStatus)
+                and o.createdAt >= :fromDate
+                and o.createdAt <= :toDate
+                """
+    )
     Page<Order> findAllOrdersBetweenDateWithRelation(
             @Param("orderStatus") OrderStatus orderStatus,
             @Param("fromDate") LocalDateTime fromDate,
@@ -167,26 +213,40 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             Pageable pageable
     );
 
-    @Query("select o from Order o " +
+    @Query(
+            value = "select o from Order o " +
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus) " +
-            "and o.createdAt >= :fromDate ")
+            "and o.createdAt >= :fromDate ",
+            countQuery = """
+                select count(o) from Order o
+                where (:orderStatus is null or o.orderStatus = :orderStatus)
+                and o.createdAt >= :fromDate
+                """
+    )
     Page<Order> findAllOrdersFromDateWithRelation(
             @Param("orderStatus") OrderStatus orderStatus,
             @Param("fromDate") LocalDateTime fromDate,
             Pageable pageable
     );
 
-    @Query("select o from Order o " +
+    @Query(
+            value = "select o from Order o " +
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
             "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus) " +
-            "and o.createdAt <= :toDate " )
+            "and o.createdAt <= :toDate ",
+            countQuery = """
+                select count(o) from Order o
+                where (:orderStatus is null or o.orderStatus = :orderStatus)
+                and o.createdAt <= :toDate
+                """
+    )
     Page<Order> findAllOrdersToDateWithRelation(
             @Param("orderStatus") OrderStatus orderStatus,
             @Param("toDate") LocalDateTime toDate,

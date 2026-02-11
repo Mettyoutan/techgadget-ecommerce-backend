@@ -30,9 +30,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      * Search paginated products
      * by name and category id (complex query)
      */
-    @Query("select p from Product p where " +
+    @Query(
+            value = "select p from Product p where " +
             "lower(p.name) like lower(concat('%', :name, '%') ) and " +
-            "p.category.id = :categoryId")
+            "p.category.id = :categoryId",
+            countQuery = """
+                select count(p) from Product p
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.category.id = :categoryId
+            """
+    )
     Page<Product> searchByNameAndCategory_Id(
             @Param("name") String name,
             @Param("categoryId") Long categoryId,
@@ -43,10 +50,18 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      * Search paginated products
      * by name, category id, and price range
      */
-    @Query("select p from Product p where " +
+    @Query(
+            value = "select p from Product p where " +
             "lower(p.name) like lower(concat('%', :name, '%') ) and " +
             "p.category.id = :categoryId and " +
-            "p.priceInRupiah between :minPrice and :maxPrice")
+            "p.priceInRupiah between :minPrice and :maxPrice",
+            countQuery = """
+                select count(p) from Product p
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.category.id = :categoryId
+                and p.priceInRupiah between :minPrice and :maxPrice
+            """
+    )
     Page<Product> searchByNameAndCategory_IdAndPrice(
             @Param("name") String name,
             @Param("categoryId") Long categoryId,
@@ -59,9 +74,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      * Search paginated products
      * by name and price range
      */
-    @Query("select p from Product p where " +
+    @Query(
+            value = "select p from Product p where " +
             "lower(p.name) like lower(concat('%', :name, '%') ) and " +
-            "p.priceInRupiah between :minPrice and :maxPrice")
+            "p.priceInRupiah between :minPrice and :maxPrice",
+            countQuery = """
+                select count(p) from Product p
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.priceInRupiah between :minPrice and :maxPrice
+            """
+    )
     Page<Product> searchByNameAndPrice(
             @Param("name") String name,
             @Param("minPrice") Long minPrice,
@@ -72,7 +94,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     /**
      * Find paginated products by stock availability
      */
-    @Query("select p from Product p where p.stockQuantity > 0")
+    @Query(
+            value = "select p from Product p where p.stockQuantity > 0",
+            countQuery = "select count(p) from Product p where p.stockQuantity > 0"
+    )
     Page<Product> findAvailableProducts(Pageable pageable);
 
     /**
