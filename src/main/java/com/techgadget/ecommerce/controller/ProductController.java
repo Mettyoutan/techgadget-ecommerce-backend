@@ -2,9 +2,15 @@ package com.techgadget.ecommerce.controller;
 
 import com.techgadget.ecommerce.dto.request.CreateProductRequest;
 import com.techgadget.ecommerce.dto.request.ProductSearchRequest;
+import com.techgadget.ecommerce.dto.response.ErrorResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.dto.response.ProductResponse;
 import com.techgadget.ecommerce.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +30,21 @@ public class ProductController {
      * Create new product (ADMIN)
      * POST /api/products
      */
+    @Operation(
+            summary = "Create new product",
+            description = "Only admin can create new product."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Order is created"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @PostMapping
-    @PreAuthorize("isAuthenticated()") // TODO: using ADMIN role instead of just authenticated
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ProductResponse> createProduct(
             @Valid @RequestBody CreateProductRequest request
     ) {
@@ -39,6 +58,20 @@ public class ProductController {
      * Flexible sort
      * GET /api/products/search?....
      */
+    @Operation(
+            summary = "Search product",
+            description = "Search product using query params filter",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody()
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Searched product is founded"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @GetMapping("/search")
     public ResponseEntity<PaginatedResponse<ProductResponse>> searchProducts(
             @Valid @ModelAttribute ProductSearchRequest request
@@ -61,6 +94,19 @@ public class ProductController {
      * Get single product by id (PUBLIC)
      * GET /api/products/{id}
      */
+    @Operation(
+            summary = "Get product by id",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Product by id is founded"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @GetMapping("{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable("id") Long productId) {
         var productResponse = productService.getProductById(productId);
@@ -73,6 +119,19 @@ public class ProductController {
      * Flexible sort
      * GET /api/products?..
      */
+    @Operation(
+            summary = "Get all products",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Products are founded"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @GetMapping
     public ResponseEntity<PaginatedResponse<ProductResponse>> getAllProducts(
             @Valid @ModelAttribute ProductSearchRequest request

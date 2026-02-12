@@ -63,6 +63,10 @@ public class SecurityConfig {
                         // Admin endpoint
                         .requestMatchers("/admin/**").hasAuthority(UserRole.ADMIN.toString())
 
+                        // Open API endpoint
+                        .requestMatchers("/v3/api-docs").permitAll() // http://localhost:8080/api/v3/api-docs
+                        .requestMatchers("/swagger-ui/**").permitAll() // http://localhost:8080/api/swagger-ui/index.html
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

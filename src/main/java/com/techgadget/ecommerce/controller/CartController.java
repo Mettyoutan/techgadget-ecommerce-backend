@@ -3,8 +3,14 @@ package com.techgadget.ecommerce.controller;
 import com.techgadget.ecommerce.dto.request.AddCartItemRequest;
 import com.techgadget.ecommerce.dto.request.UpdateCartItemRequest;
 import com.techgadget.ecommerce.dto.response.CartResponse;
+import com.techgadget.ecommerce.dto.response.ErrorResponse;
 import com.techgadget.ecommerce.security.CustomUserDetails;
 import com.techgadget.ecommerce.service.CartService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +33,19 @@ public class CartController {
      * Get current user's cart
      * GET /api/cart (CUSTOMER)
      */
+    @Operation(
+            summary = "Get user's cart",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User's cart is founded"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @GetMapping
     public ResponseEntity<CartResponse> getCart(
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -42,6 +61,19 @@ public class CartController {
      *
      * Request body = AddCartItemRequest dto
      */
+    @Operation(
+            summary = "Add cart item to cart",
+            description = "Create cart item and add it to the user's cart"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Cart item created and added"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @PostMapping
     public ResponseEntity<CartResponse> addCartItemToCart(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -58,6 +90,19 @@ public class CartController {
      *
      * Request body = UpdateCartItemRequest
      */
+    @Operation(
+            summary = "Update cart item",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Cart item is updated"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @PutMapping("/{cartItemId}")
     public ResponseEntity<CartResponse> updateCartItem(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -74,6 +119,19 @@ public class CartController {
      * Remove cart item in cart
      * DELETE /api/cart/{cartItemId} (CUSTOMER)
      */
+    @Operation(
+            summary = "Delete cart item in cart",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Cart item is deleted"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @DeleteMapping("/{cartItemId}")
     public ResponseEntity<CartResponse> removeCartItem(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -89,6 +147,19 @@ public class CartController {
      * Clear all cart items
      * DELETE /api/cart (CUSTOMER)
      */
+    @Operation(
+            summary = "Clear all cart items",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "All cart items is cleared"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @DeleteMapping
     public ResponseEntity<CartResponse> clearCart(
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -104,6 +175,19 @@ public class CartController {
      * Count total cart items
      * GET /api/cart/count (CUSTOMER)
      */
+    @Operation(
+            summary = "Count cart items",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Cart items are counted"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @GetMapping("/count")
     public ResponseEntity<CartResponse.CartCountResponse> getCartItemCount(
             @AuthenticationPrincipal CustomUserDetails userDetails

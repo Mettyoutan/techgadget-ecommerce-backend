@@ -35,10 +35,11 @@ public class ProductReviewService {
     @Transactional
     public ProductReviewResponse createReview(
             Long userId,
-            Long orderId,
             Long productId,
             CreateProductReviewRequest request
     ) {
+        // Get order id
+        Long orderId = request.getOrderId();
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {

@@ -36,7 +36,12 @@ public class ProductReviewController {
     ) {
 
         ProductReviewResponse response = productReviewService
-                .createReview(userDetails.getUserId(), productId, request);
+                .createReview(
+                        userDetails.getUserId(),
+                        productId,
+
+                        request
+                );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

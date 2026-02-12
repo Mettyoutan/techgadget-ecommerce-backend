@@ -3,11 +3,17 @@ package com.techgadget.ecommerce.controller;
 import com.techgadget.ecommerce.domain.OrderStatus;
 import com.techgadget.ecommerce.dto.request.CreateOrderRequest;
 import com.techgadget.ecommerce.dto.request.OrderFilterRequest;
+import com.techgadget.ecommerce.dto.response.ErrorResponse;
 import com.techgadget.ecommerce.dto.response.OrderResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.security.CustomUserDetails;
 import com.techgadget.ecommerce.service.OrderService;
 import com.techgadget.ecommerce.service.PaymentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -42,6 +48,19 @@ public class OrderController {
      *   "cartItemIds": [1, 2, 3]
      * }
      */
+    @Operation(
+            summary = "Create new order",
+            description = "Create order from selected cart items"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Order is created"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -59,6 +78,19 @@ public class OrderController {
      * Only allowed if order status is PENDING
      * POST /api/orders/{orderId}/cancel
      */
+    @Operation(
+            summary = "Cancel order",
+            description = "Cancel order (manual cancel) and RESTORE product stock"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order is canceled"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @PostMapping("/{orderId}/cancel")
     public ResponseEntity<OrderResponse> cancelOrder(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -75,9 +107,20 @@ public class OrderController {
      * Logic of Order payment (DUMMY)
      * Mark order as PAID and CONFIRMED
      * POST /api/orders/{orderId}/pay
-     *
-     * TODO: Create PaymentService
      */
+    @Operation(
+            summary = "Pay order",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Order is paid and payment is created"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @PostMapping("/{orderId}/pay")
     public ResponseEntity<OrderResponse> payOrder(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -89,13 +132,26 @@ public class OrderController {
         OrderResponse response = paymentService
                 .payOrder(userDetails.getUserId(), orderId);
 
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
      * Get all user orders
      * GET /api/orders
      */
+    @Operation(
+            summary = "Get user orders",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = ""),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @GetMapping
     public ResponseEntity<PaginatedResponse<OrderResponse>> getUserOrders(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -114,6 +170,19 @@ public class OrderController {
      * GET /api/orders/{orderId}
      * -
      */
+    @Operation(
+            summary = "Get order by id",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order by id is founded"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
     @GetMapping("{orderId}")
     public ResponseEntity<OrderResponse> getOrderById(
             @AuthenticationPrincipal CustomUserDetails userDetails,
