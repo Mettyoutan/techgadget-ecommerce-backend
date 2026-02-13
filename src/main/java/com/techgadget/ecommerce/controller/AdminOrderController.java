@@ -49,7 +49,7 @@ public class AdminOrderController {
     ) {
 
         PaginatedResponse<OrderResponse> response =
-                orderService.searchAllOrders(filter);
+                orderService.adminSearchAllOrders(filter);
 
         return ResponseEntity.ok(response);
     }
@@ -104,7 +104,7 @@ public class AdminOrderController {
             @PathVariable Long orderId
     ) {
 
-        OrderResponse response = orderService.getOrderByIdForAdmin(orderId);
+        OrderResponse response = orderService.adminGetOrderById(orderId);
         return ResponseEntity.ok(response);
     }
 
@@ -131,7 +131,7 @@ public class AdminOrderController {
     ) {
 
         OrderResponse response = orderService
-                .updateOrderStatusToShip(orderId, request);
+                .adminUpdateOrderStatusToShip(orderId, request);
 
         return ResponseEntity.ok(response);
     }
@@ -158,7 +158,7 @@ public class AdminOrderController {
     ) {
 
         OrderResponse response = orderService
-                .updateOrderStatusToComplete(orderId);
+                .adminUpdateOrderStatusToComplete(orderId);
 
         return ResponseEntity.ok(response);
     }
@@ -185,7 +185,7 @@ public class AdminOrderController {
     ) {
 
         OrderResponse response = orderService
-                .updateOrderStatusToCancel(orderId);
+                .adminUpdateOrderStatusToCancel(orderId);
 
         return ResponseEntity.ok(response);
     }

@@ -30,6 +30,9 @@ public class PaymentService {
     @Transactional
     public OrderResponse payOrder(Long userId, Long orderId) {
 
+        log.debug("Processing pay order - User: {}, Order: {}",
+                userId, orderId);
+
         Order order = orderRepository.findUserOrderByIdWithRelation(orderId, userId)
                 .orElseThrow(() -> {
                     log.warn("Order not found with id = {} and user id = {}", orderId, userId);
@@ -49,7 +52,7 @@ public class PaymentService {
 
         orderRepository.save(order);
 
-        log.info("Order id = {} marked as PAID and COMPLETED by user id = {}", orderId, userId);
+        log.info("Order {} marked as PAID and COMPLETED by User {}", orderId, userId);
 
         return mapToOrderResponse(order);
     }

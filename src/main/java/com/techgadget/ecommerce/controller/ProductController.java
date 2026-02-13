@@ -114,36 +114,4 @@ public class ProductController {
         return ResponseEntity.ok(productResponse);
     }
 
-    /**
-     * Get all products (PUBLIC)
-     * Flexible sort
-     * GET /api/products?..
-     */
-    @Operation(
-            summary = "Get all products",
-            description = ""
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Products are founded"),
-            @ApiResponse(
-                    responseCode = "4**",
-                    description = "Error",
-                    content = @Content(
-                            schema = @Schema(implementation = ErrorResponse.class)
-                    )),
-    })
-    @GetMapping
-    public ResponseEntity<PaginatedResponse<ProductResponse>> getAllProducts(
-            @Valid @ModelAttribute ProductSearchRequest request
-    ) {
-        var paginatedResponse = productService.getAllProducts(
-                        request.getPage(),
-                        request.getSize(),
-                        request.getSortBy(), // Can decide sort by what
-                        request.getSortDir()
-                );
-
-        return ResponseEntity.ok(paginatedResponse);
-    }
-
 }

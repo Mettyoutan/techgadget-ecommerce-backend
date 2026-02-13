@@ -27,17 +27,23 @@ public class UserProfileService {
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(Long userId) {
 
+        log.debug("Processing get user profile - User: {}", userId);
+
         User user = userRepository.findByIdWithAddress(userId)
                 .orElseThrow(() -> {
                     log.warn("User with id {} not found", userId);
                     return new NotFoundException("User not found.");
                 });
 
+        log.info("Successfully retrieved user profile - User: {}", userId);
+
         return mapToUserProfile(user);
     }
 
     @Transactional
     public UserProfileResponse addAddress(Long userId, CreateAddressRequest request) {
+
+        log.debug("Processing add address request - User: {}", userId);
 
         User user = userRepository.findByIdWithAddress(userId)
                 .orElseThrow(() -> {
@@ -59,6 +65,8 @@ public class UserProfileService {
         // Add to user addresses
         user.addAddress(address);
         userRepository.save(user);
+
+        log.info("User {} successfully added address {}", userId, address.getId());
 
         return mapToUserProfile(user);
     }

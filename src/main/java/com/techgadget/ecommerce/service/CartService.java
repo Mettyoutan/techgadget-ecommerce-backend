@@ -36,6 +36,8 @@
          * If not exists (null), create new cart
          */
         private Cart getOrCreateCartEntity(Long userId) {
+            log.debug("Processing get or create cart entity - User: {}", userId);
+
             // Get cart with OPTIMIZED QUERY --> JOIN FETCH items
             Cart cart = cartRepository.findByUser_IdWithItems(userId).orElse(null);
 
@@ -46,11 +48,12 @@
                             log.warn("User not found with id = {}.", userId);
                             return new NotFoundException("User not found.");
                         });
+
+                // Create new cart for user
                 cart = cartRepository.save(new Cart(user));
             }
 
-            log.debug("Retrieved cart for user id = {} - {} items",
-                    userId, cart.getTotalItems());
+            log.debug("Cart retrieved/created - Cart: {}", cart.getId());
 
             return cart;
         }
@@ -60,8 +63,8 @@
          */
         @Transactional
         public CartResponse getCart(Long userId) {
-            Cart cart = getOrCreateCartEntity(userId);
 
+            Cart cart = getOrCreateCartEntity(userId);
             return mapToCartResponse(cart);
         }
 
@@ -70,6 +73,9 @@
          */
         @Transactional
         public CartResponse addToCart(Long userId, AddCartItemRequest request) {
+            log.debug("Processing add to cart request - User: {}, Product: {}, Quantity: {}",
+                    userId, request.getProductId(), request.getQuantity());
+
             // Get or create cart
             Cart cart = getOrCreateCartEntity(userId);
 
@@ -90,13 +96,17 @@
 
             if (cartItem != null) {
                 // Update new quantity to existing cart item
-                int newQuantity = cartItem.getQuantity() + request.getQuantity();
+                int oldQuantity = cartItem.getQuantity();
+                int newQuantity = oldQuantity + request.getQuantity();
                 cartItem.setQuantity(newQuantity);
 
                 int index = cart.getItems().indexOf(cartItem);
                 if (index >= 0) {
                     cart.getItems().set(index, cartItem);  // Force update reference
                 }
+
+                log.debug("Updated existing cart item - CartItem: {}, Product: {}, Quantity: {} -> {}",
+                        cartItem.getId(), product.getId(), oldQuantity, newQuantity);
 
             } else {
                 // Check if product stock not sufficient to quantity
@@ -107,10 +117,22 @@
                 // Create new cart item & add to cart
                 cartItem = new CartItem(cart, product, request.getQuantity());
                 cart.addItem(cartItem);
+
+                log.debug("Added new cart item - CartItem: {}, Product: {}, Quantity: {}",
+                        cartItem.getId(), product.getId(), request.getQuantity());
             }
 
             // Save cart
             cartRepository.save(cart);
+
+            log.info("User {} successfully added product {} to cart {} - Quantity: {}, " +
+                            "Cart Total Items: {}, Cart Value: Rp {}",
+                    userId,
+                    request.getProductId(),
+                    cart.getId(),
+                    request.getQuantity(),
+                    cart.getItems().size(),
+                    cart.getTotalItems());
 
             return mapToCartResponse(cart);
         }
@@ -120,6 +142,9 @@
          */
         @Transactional
         public CartResponse updateCartItem(Long userId, Long cartItemId, UpdateCartItemRequest request) {
+            log.debug("Processing update cart item - User: {}, CartItem: {}, Quantity: {}",
+                    userId, cartItemId, request.getQuantity());
+
             // Get cart item using id and user id
             CartItem cartItem = cartItemRepository.findByIdAndCart_User_IdWithProduct(cartItemId, userId)
                     .orElseThrow(() -> {
@@ -133,6 +158,12 @@
 
             Cart cart = getOrCreateCartEntity(userId);
 
+            log.info("User {} successfully updated cart item {} in cart {} - Quantity: {}",
+                    userId,
+                    cartItemId,
+                    cart.getId(),
+                    request.getQuantity());
+
             return mapToCartResponse(cart);
         }
 
@@ -141,6 +172,8 @@
          */
         @Transactional
         public CartResponse removeCartItem(Long userId, Long cartItemId) {
+            log.debug("Processing remove cart item - User: {}, CartItem: {}",
+                    userId, cartItemId);
 
             Cart cart = getOrCreateCartEntity(userId);
 
@@ -157,28 +190,41 @@
             cart.getItems().remove(cartItem);
             cartRepository.save(cart);
 
+            log.info("User {} successfully removed cart item {} in cart {}",
+                    userId, cartItemId, cart.getId());
+
             return mapToCartResponse(cart);
         }
 
         @Transactional
         public CartResponse clearCart(Long userId) {
+            log.debug("Processing clear cart - User: {}", userId);
 
             Cart cart = getOrCreateCartEntity(userId);
 
             cart.getItems().clear();
             cartRepository.save(cart);
 
+            log.info("User {} successfully cleared cart {}",
+                    userId, cart.getId());
+
             return mapToCartResponse(cart);
         }
 
         @Transactional(readOnly = true)
         public CartResponse.CartCountResponse getCartItemCount(Long userId) {
+            log.debug("Processing get cart item count - User: {}", userId);
+
             Cart cart = getOrCreateCartEntity(userId);
+
+            log.info("User {} got total {} cart items on cart {}",
+                    userId, cart.getTotalItems(), cart.getId());
 
             return new CartResponse.CartCountResponse(cart.getTotalItems());
         }
 
         private CartResponse mapToCartResponse(Cart cart) {
+
             // Create cart response
             CartResponse cartResponse = new CartResponse();
             cartResponse.setTotalItems(cart.getTotalItems());

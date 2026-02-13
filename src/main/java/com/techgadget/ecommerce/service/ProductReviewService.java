@@ -38,6 +38,10 @@ public class ProductReviewService {
             Long productId,
             CreateProductReviewRequest request
     ) {
+
+        log.debug("Processing create review - User: {}, Product: {}, Order: {}, Rating: {}",
+                userId, productId, request.getOrderId(), request.getRating());
+
         // Get order id
         Long orderId = request.getOrderId();
 
@@ -94,6 +98,9 @@ public class ProductReviewService {
 
         productReviewRepository.save(productReview);
 
+        log.info("User {} successfully created review {} for product {}",
+                userId, productReview.getId(), productId);
+
         return mapProductReviewToResponse(productReview);
     }
 
@@ -106,6 +113,8 @@ public class ProductReviewService {
             String sortDir
     ) {
 
+        log.debug("Processing get single product reviews - Product: {}", productId);
+
         Sort.Direction direction = getDirection(sortDir);
 
         Pageable pageable = PageRequest.of(
@@ -116,6 +125,9 @@ public class ProductReviewService {
 
         Page<ProductReview> productReviewPage = productReviewRepository
                 .findByProduct_IdWithRelation(productId, pageable);
+
+        log.info("Successfully fetched {} product reviews for product {}",
+                productReviewPage.getTotalElements(), productId);
 
         return mapPageToResponse(productReviewPage);
     }

@@ -52,7 +52,12 @@ public class OrderService {
     @Transactional
     public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
 
-        log.debug("Creating order for user id = {}", userId);
+        log.debug("Processing create order - " +
+                        "User: {}, CartItem: {}, Address: {}, PaymentMethod: {}",
+                userId,
+                request.getCartItemIds(),
+                request.getAddressId(),
+                request.getPaymentMethod());
 
         // 0. Check if requested cart items > 0
         if (request.getCartItemIds() == null || request.getCartItemIds().isEmpty()) {
@@ -204,8 +209,7 @@ public class OrderService {
                     return new NotFoundException("Order not found.");
                 });
 
-
-        log.info("Successfully created order with id = {}. User id = {}. Total items = {}",
+        log.info("User {} successfully created order {} - TotalItems = {}",
                 finalOrder.getId(), userId, finalOrder.getTotalItems());
 
         return mapToOrderResponse(finalOrder);
@@ -217,6 +221,8 @@ public class OrderService {
      */
     @Transactional
     public OrderResponse cancelOrder(Long userId, Long orderId) {
+        log.debug("Processing cancel order - User: {}, OrderId: {}",
+                userId, orderId);
 
         Order order = orderRepository.findUserOrderByIdWithRelation(orderId, userId)
                 .orElseThrow(() -> {
@@ -238,12 +244,16 @@ public class OrderService {
             productRepository.save(product);
         }
 
+        OrderStatus oldOrderStatus = order.getOrderStatus();
         order.setOrderStatus(OrderStatus.CANCELLED);
         order.getPayment().setPaymentStatus(PaymentStatus.FAILED);
 
+        log.info("Order {} successfully set status from {} to {}",
+                orderId, oldOrderStatus, order.getOrderStatus());
+
         orderRepository.save(order);
 
-        log.info("Successfully cancelled order with id = {} and user id = {}. Stock restored",
+        log.info("User {} successfully cancelled order {}. Stock restored.",
                 orderId, userId);
 
         return mapToOrderResponse(order);
@@ -254,6 +264,9 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public PaginatedResponse<OrderResponse> getUserOrders(Long userId, OrderFilterRequest filter) {
+        log.debug("Processing get user orders - " +
+                "User: {}, OrderStatus: {}, FromDate: {}, ToDate: {}",
+                userId, filter.getStatus(), filter.getFromDate(), filter.getToDate());
 
         // Convert filter.status to OrderStatus -- NULLABLE
         OrderStatus orderStatus = null;
@@ -317,6 +330,9 @@ public class OrderService {
             );
         }
 
+        log.info("User {} successfully got {} orders ",
+                userId, orderPage.getTotalElements());
+
         return mapPageToResponse(orderPage);
     }
 
@@ -326,11 +342,16 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderResponse getUserOrderById(Long userId, Long orderId) {
 
+        log.debug("Processing get user order by id - User: {}, OrderId: {}",
+                userId, orderId);
+
         Order order = orderRepository.findUserOrderByIdWithRelation(orderId, userId)
                 .orElseThrow(() -> {
                     log.warn("Order not found with id = {} and user id = {}", orderId, userId);
                     return new NotFoundException("Order not found.");
                 });
+
+        log.info("User {} successfully got order {}", userId, orderId);
 
         return mapToOrderResponse(order);
     }
@@ -343,7 +364,10 @@ public class OrderService {
      * ADMIN - Search filtered orders from every user
      */
     @Transactional(readOnly = true)
-    public PaginatedResponse<OrderResponse> searchAllOrders(OrderFilterRequest filter) {
+    public PaginatedResponse<OrderResponse> adminSearchAllOrders(OrderFilterRequest filter) {
+
+        log.debug("Processing admin search all orders - Status: {}, FromDate: {}, ToDate: {}",
+                filter.getStatus(), filter.getFromDate(), filter.getToDate());
 
         // Convert filter.status to OrderStatus -- NULLABLE
         OrderStatus orderStatus = null;
@@ -384,24 +408,36 @@ public class OrderService {
                     toDate,
                     pageable
             );
+            log.debug("Running query -> orderRepository.findAllOrdersBetweenDateWithRelation");
+
         } else if (fromDate != null) {
-            orderPage = orderRepository.findAllOrdersToDateWithRelation(
+            orderPage = orderRepository.findAllOrdersFromDateWithRelation(
                     orderStatus,
                     fromDate,
                     pageable
             );
+            log.debug("Running query -> orderRepository.findAllOrdersFromDateWithRelation");
+
         } else if (toDate != null) {
             orderPage = orderRepository.findAllOrdersToDateWithRelation(
                     orderStatus,
                     toDate,
                     pageable
             );
+            log.debug("Running query -> orderRepository.findAllOrdersToDateWithRelation");
+
+
         } else {
             orderPage = orderRepository.findAllOrdersWithRelation(
                     orderStatus,
                     pageable
             );
+            log.debug("Running query -> orderRepository.findAllOrdersWithRelation");
+
         }
+
+        log.info("Admin successfully got all {} orders",
+                orderPage.getTotalElements());
 
         return mapPageToResponse(orderPage);
     }
@@ -411,7 +447,9 @@ public class OrderService {
      * 
      */
     @Transactional(readOnly = true)
-    public OrderResponse getOrderByIdForAdmin(Long orderId) {
+    public OrderResponse adminGetOrderById(Long orderId) {
+
+        log.debug("Processing admin get order by id - Order: {}", orderId);
 
         Order order = orderRepository
                 .findOrderByIdWithRelationForAdmin(orderId)
@@ -420,6 +458,8 @@ public class OrderService {
                     return new NotFoundException("Order not found.");
                 });
 
+        log.info("Admin successfully got order with id {}", orderId);
+
         return mapToOrderResponse(order);
     }
 
@@ -427,8 +467,11 @@ public class OrderService {
      * Update order status to ship
      */
     @Transactional
-    public OrderResponse updateOrderStatusToShip(Long orderId, UpdateOrderStatusToShipRequest request) {
-        log.info("Admin is updating order status to ship - order id = {}", orderId);
+    public OrderResponse adminUpdateOrderStatusToShip(Long orderId, UpdateOrderStatusToShipRequest request) {
+
+        log.debug("Processing admin update order status to ship - " +
+                "Order: {}, ShippingProvider: {}, TrackingNumber: {}",
+                orderId, request.getShippingProvider(), request.getTrackingNumber());
 
         OrderStatus targetStatus = OrderStatus.SHIPPED;
 
@@ -456,6 +499,9 @@ public class OrderService {
 
         orderRepository.save(order);
 
+        log.info("Admin successfully updated order status from {} to {} - Order: {}",
+                currentStatus, targetStatus, orderId);
+
         return mapToOrderResponse(order);
     }
 
@@ -463,7 +509,9 @@ public class OrderService {
      * Update order status to complete
      */
     @Transactional
-    public OrderResponse updateOrderStatusToComplete(Long orderId) {
+    public OrderResponse adminUpdateOrderStatusToComplete(Long orderId) {
+
+        log.debug("Processing admin update order status to complete - Order: {}", orderId);
 
         OrderStatus targetStatus = OrderStatus.COMPLETED;
 
@@ -487,11 +535,16 @@ public class OrderService {
         order.setOrderStatus(targetStatus);
         orderRepository.save(order);
 
+        log.info("Admin successfully updated order status from {} to {} - Order: {}",
+                currentStatus, targetStatus, orderId);
+
         return mapToOrderResponse(order);
     }
 
     @Transactional
-    public OrderResponse updateOrderStatusToCancel(Long orderId) {
+    public OrderResponse adminUpdateOrderStatusToCancel(Long orderId) {
+
+        log.debug("Processing admin update order status to cancel - Order: {}", orderId);
 
         OrderStatus targetStatus = OrderStatus.CANCELLED;
 
@@ -514,6 +567,9 @@ public class OrderService {
 
         order.setOrderStatus(targetStatus);
         orderRepository.save(order);
+
+        log.info("Admin successfully updated order status from {} to {} - Order: {}",
+                currentStatus, targetStatus, orderId);
 
         return mapToOrderResponse(order);
     }

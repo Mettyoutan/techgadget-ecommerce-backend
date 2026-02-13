@@ -28,10 +28,13 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        log.debug("Register request - email={}, username={}", request.getEmail(), request.getUsername());
+        log.debug("Processing register request - Email: {}, Username: {}",
+                request.getEmail(), request.getUsername());
 
         // Hash password
         String hashedPassword = passwordEncoder.encode(request.getPassword());
+
+        log.debug("Password hashed successfully");
 
         // Create new user
         User user = new User();
@@ -51,7 +54,7 @@ public class AuthService {
         String token = jwtTokenProvider.generateToken(
                 user.getId(), user.getEmail());
 
-        log.info("User registered: id={}", user.getId());
+        log.info("User {} registered successfully", user.getId());
 
         // Build response
         UserResponse userRes = new UserResponse(
@@ -66,7 +69,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request) {
-        log.debug("Login request: email={}", request.getEmail());
+        log.debug("Processing login request - Email: {}", request.getEmail());
 
         // Check existing user
         User user = userRepository.findByEmail(request.getEmail())
@@ -88,7 +91,7 @@ public class AuthService {
         String token = jwtTokenProvider.generateToken(
                 user.getId(), user.getEmail());
 
-        log.info("User logged in: id={}", user.getId());
+        log.info("User {} logged in successfully", user.getId());
 
         // Build response
         UserResponse userRes = new UserResponse(

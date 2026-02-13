@@ -35,7 +35,8 @@ public class ProductService {
             String sortBy,
             String sortDir
     ) {
-        log.info("Getting all products");
+        log.debug("Processing get all products - Page: {}, Size: {}, SortBy: {}, SortDir: {}",
+                page, size, sortBy, sortDir);
 
         Sort.Direction sortDirection = getDirection(sortDir);
 
@@ -47,6 +48,11 @@ public class ProductService {
 
         Page<Product> productPage = productRepository.findAll(pageable);
 
+        log.info("Successfully fetched {} products - Page {}/{}",
+                productPage.getNumberOfElements(),
+                page,
+                productPage.getTotalPages());
+
         return mapPageToResponse(productPage);
     }
 
@@ -55,85 +61,17 @@ public class ProductService {
      */
     @Transactional(readOnly = true)
     public ProductResponse getProductById(Long productId) {
+
+        log.debug("Processing get product by id - Product: {}", productId);
+
         Product product = productRepository.findById(productId).orElseThrow(() -> {
             log.warn("Product not found with id {}", productId);
             return new NotFoundException("Product not found.");
         });
 
+        log.info("Successfully fetched product {}", product.getId());
+
         return mapProductToResponse(product);
-    }
-
-    /**
-     * Search products by name
-     */
-    @Transactional(readOnly = true)
-    public PaginatedResponse<ProductResponse> searchByName(
-            String name,
-            int page,
-            int size,
-            String sortBy,
-            String sortDir
-    ) {
-
-        Sort.Direction sortDirection = getDirection(sortDir);
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(sortDirection, sortBy)
-        );
-
-        Page<Product> productPage = productRepository.findByNameContainingIgnoreCase(name, pageable);
-
-        return mapPageToResponse(productPage);
-    }
-
-    /**
-     * Filter products by category ID
-     */
-    @Transactional(readOnly = true)
-    public PaginatedResponse<ProductResponse> filterByCategory(
-            Long categoryId,
-            int page,
-            int size,
-            String sortBy,
-            String sortDir
-    ) {
-        Sort.Direction sortDirection = getDirection(sortDir);
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(sortDirection, sortBy)
-        );
-
-        Page<Product> productPage = productRepository.findByCategory_Id(categoryId, pageable);
-
-        return mapPageToResponse(productPage);
-    }
-
-    /**
-     * Filter products using range of price in rupiah
-     */
-    @Transactional(readOnly = true)
-    public PaginatedResponse<ProductResponse> filterByPrice(
-            Long minPrice,
-            Long maxPrice,
-            int page,
-            int size,
-            String sortDir
-    ) {
-        Sort.Direction sortDirection = getDirection(sortDir);
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(sortDirection, "priceInRupiah")
-        );
-
-        Page<Product> productPage = productRepository.findByPriceInRupiahBetween(minPrice, maxPrice, pageable);
-
-        return mapPageToResponse(productPage);
     }
 
     /**
@@ -150,6 +88,12 @@ public class ProductService {
             String sortBy,
             String sortDir
     ) {
+
+        log.debug("Processing advanced search - " +
+                "ProductName: {}, Category: {}, MinPrice: {}, " +
+                "MaxPrice: {}, Page: {}, Size: {}, SortBy: {}, SortDir: {}",
+                name, categoryId, minPrice, maxPrice, page, size, sortBy, sortDir);
+
         Sort.Direction direction = getDirection(sortDir);
 
         Pageable pageable = PageRequest.of(
@@ -169,9 +113,17 @@ public class ProductService {
             productPage = productRepository.searchByNameAndCategory_IdAndPrice(
                     name, categoryId, minPrice, maxPrice, pageable
             );
+
+            log.debug("Running query -> productRepository.searchByNameAndCategory_IdAndPrice");
+
         } else {
             productPage = productRepository.searchByNameAndPrice(name, minPrice, maxPrice, pageable);
+
+            log.debug("Running query -> productRepository.searchByNameAndPrice");
         }
+
+        log.info("Successfully fetched {} products using advanced search - Page: {}/{}",
+                productPage.getNumberOfElements(), page, productPage.getTotalPages());
 
         return mapPageToResponse(productPage);
     }
@@ -183,6 +135,10 @@ public class ProductService {
      */
     @Transactional
     public ProductResponse createProduct(CreateProductRequest request) {
+
+        log.debug("Processing create product (ADMIN) - Category: {}, ProductName: {}, Stock: {}",
+                request.getCategoryId(), request.getName(), request.getStockQuantity());
+
         // Check if category exists
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new NotFoundException("Category not found."));
@@ -200,7 +156,10 @@ public class ProductService {
 
         productRepository.save(product);
 
-        log.info("Created new product: {} - Rp {}", product.getId(), product.getPriceInRupiah());
+        log.info("Successfully created product {} - Price: {}, Stock: {}",
+                product.getId(),
+                product.getPriceInRupiah(),
+                product.getStockQuantity());
 
         return mapProductToResponse(product);
     }
@@ -209,17 +168,22 @@ public class ProductService {
      * Deduct stock (called during checkout)
      */
     @Transactional
-    public void deductStock(Long productId, int stockQuantity) {
+    public void deductStock(Long productId, int quantity) {
+
+        log.debug("Processing deduct stock by {} quantity - Product: {}",
+                productId, quantity);
+
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found."));
 
         // Decrease the stock quantity
-        product.decreaseStockQuantity(stockQuantity);
+        product.decreaseStockQuantity(quantity);
 
         // Saved
         productRepository.save(product);
 
-        log.info("Deducted stock for product: {} - quantity: {}", productId, stockQuantity);
+        log.info("Successfully deducted stock by {} quantity for product {} - ",
+                productId, quantity);
     }
 
     /**
