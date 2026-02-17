@@ -51,7 +51,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
 
                         // Public endpoint
-                        .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/auth/login",
+                                "/auth/register",
+                                "/auth/refresh"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
 
                         // Test endpoint
