@@ -1,8 +1,8 @@
 package com.techgadget.ecommerce.service;
 
-import com.techgadget.ecommerce.domain.OrderStatus;
-import com.techgadget.ecommerce.domain.PaymentMethod;
-import com.techgadget.ecommerce.domain.PaymentStatus;
+import com.techgadget.ecommerce.enums.OrderStatus;
+import com.techgadget.ecommerce.enums.PaymentMethod;
+import com.techgadget.ecommerce.enums.PaymentStatus;
 import com.techgadget.ecommerce.dto.request.CreateOrderRequest;
 import com.techgadget.ecommerce.dto.request.OrderFilterRequest;
 import com.techgadget.ecommerce.dto.request.UpdateOrderStatusToShipRequest;

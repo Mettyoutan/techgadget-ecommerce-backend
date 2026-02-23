@@ -1,6 +1,6 @@
 package com.techgadget.ecommerce.config;
 
-import com.techgadget.ecommerce.domain.UserRole;
+import com.techgadget.ecommerce.enums.UserRole;
 import com.techgadget.ecommerce.security.AppAccessDeniedHandler;
 import com.techgadget.ecommerce.security.AppAuthenticationEntryPoint;
 import com.techgadget.ecommerce.security.JwtAuthenticationFilter;

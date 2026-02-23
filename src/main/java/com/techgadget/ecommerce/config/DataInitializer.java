@@ -1,6 +1,6 @@
 package com.techgadget.ecommerce.config;
 
-import com.techgadget.ecommerce.domain.UserRole;
+import com.techgadget.ecommerce.enums.UserRole;
 import com.techgadget.ecommerce.entity.Category;
 import com.techgadget.ecommerce.entity.Product;
 import com.techgadget.ecommerce.entity.User;
@@ -8,7 +8,6 @@ import com.techgadget.ecommerce.repository.CategoryRepository;
 import com.techgadget.ecommerce.repository.ProductRepository;
 import com.techgadget.ecommerce.repository.UserRepository;
 import com.techgadget.ecommerce.service.AuthService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;

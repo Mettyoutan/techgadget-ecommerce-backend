@@ -1,10 +1,8 @@
 package com.techgadget.ecommerce.entity;
 
-import com.techgadget.ecommerce.domain.PaymentMethod;
-import com.techgadget.ecommerce.domain.PaymentStatus;
-import jakarta.annotation.Nullable;
+import com.techgadget.ecommerce.enums.PaymentMethod;
+import com.techgadget.ecommerce.enums.PaymentStatus;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

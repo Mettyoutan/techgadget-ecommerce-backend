@@ -1,9 +1,6 @@
 package com.techgadget.ecommerce.entity;
 
-import com.techgadget.ecommerce.domain.OrderStatus;
-import com.techgadget.ecommerce.domain.PaymentMethod;
-import com.techgadget.ecommerce.domain.PaymentStatus;
-import com.techgadget.ecommerce.exception.BadRequestException;
+import com.techgadget.ecommerce.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

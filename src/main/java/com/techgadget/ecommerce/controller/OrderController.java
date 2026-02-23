@@ -1,6 +1,5 @@
 package com.techgadget.ecommerce.controller;
 
-import com.techgadget.ecommerce.domain.OrderStatus;
 import com.techgadget.ecommerce.dto.request.CreateOrderRequest;
 import com.techgadget.ecommerce.dto.request.OrderFilterRequest;
 import com.techgadget.ecommerce.dto.response.ErrorResponse;
@@ -16,18 +15,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/orders")

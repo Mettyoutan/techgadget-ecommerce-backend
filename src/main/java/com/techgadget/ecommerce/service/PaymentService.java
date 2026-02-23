@@ -1,7 +1,7 @@
 package com.techgadget.ecommerce.service;
 
-import com.techgadget.ecommerce.domain.OrderStatus;
-import com.techgadget.ecommerce.domain.PaymentStatus;
+import com.techgadget.ecommerce.enums.OrderStatus;
+import com.techgadget.ecommerce.enums.PaymentStatus;
 import com.techgadget.ecommerce.dto.response.AddressResponse;
 import com.techgadget.ecommerce.dto.response.OrderResponse;
 import com.techgadget.ecommerce.entity.Order;

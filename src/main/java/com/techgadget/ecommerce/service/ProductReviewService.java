@@ -1,9 +1,8 @@
 package com.techgadget.ecommerce.service;
 
-import com.techgadget.ecommerce.domain.OrderStatus;
+import com.techgadget.ecommerce.enums.OrderStatus;
 import com.techgadget.ecommerce.dto.request.CreateProductReviewRequest;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
-import com.techgadget.ecommerce.dto.response.ProductResponse;
 import com.techgadget.ecommerce.dto.response.ProductReviewResponse;
 import com.techgadget.ecommerce.dto.response.UserResponse;
 import com.techgadget.ecommerce.entity.*;

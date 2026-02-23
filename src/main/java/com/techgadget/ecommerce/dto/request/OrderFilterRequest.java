@@ -1,15 +1,12 @@
 package com.techgadget.ecommerce.dto.request;
 
-import com.techgadget.ecommerce.domain.OrderStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * DTO for getting orders with query param

@@ -1,6 +1,6 @@
 package com.techgadget.ecommerce.repository;
 
-import com.techgadget.ecommerce.domain.OrderStatus;
+import com.techgadget.ecommerce.enums.OrderStatus;
 import com.techgadget.ecommerce.entity.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

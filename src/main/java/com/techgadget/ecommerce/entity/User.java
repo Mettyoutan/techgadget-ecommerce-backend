@@ -1,6 +1,6 @@
 package com.techgadget.ecommerce.entity;
 
-import com.techgadget.ecommerce.domain.UserRole;
+import com.techgadget.ecommerce.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
