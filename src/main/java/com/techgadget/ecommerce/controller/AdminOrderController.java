@@ -1,9 +1,9 @@
 package com.techgadget.ecommerce.controller;
 
-import com.techgadget.ecommerce.dto.request.OrderFilterRequest;
-import com.techgadget.ecommerce.dto.request.UpdateOrderStatusToShipRequest;
+import com.techgadget.ecommerce.dto.request.order.OrderFilterRequest;
+import com.techgadget.ecommerce.dto.request.order.UpdateOrderStatusToShipRequest;
 import com.techgadget.ecommerce.dto.response.ErrorResponse;
-import com.techgadget.ecommerce.dto.response.OrderResponse;
+import com.techgadget.ecommerce.dto.response.order.OrderResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,4 +1,4 @@
-package com.techgadget.ecommerce.dto.request;
+package com.techgadget.ecommerce.dto.request.cart;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

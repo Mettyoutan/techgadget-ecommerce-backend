@@ -1,10 +1,8 @@
-package com.techgadget.ecommerce.dto.request;
+package com.techgadget.ecommerce.dto.request.product;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.query.SortDirection;
-import org.springframework.data.domain.Sort;
 
 /**
  * DTO for getting products with query param

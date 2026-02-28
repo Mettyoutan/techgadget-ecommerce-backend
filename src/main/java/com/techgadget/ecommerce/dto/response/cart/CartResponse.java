@@ -1,4 +1,4 @@
-package com.techgadget.ecommerce.dto.response;
+package com.techgadget.ecommerce.dto.response.cart;
 
 import lombok.*;
 

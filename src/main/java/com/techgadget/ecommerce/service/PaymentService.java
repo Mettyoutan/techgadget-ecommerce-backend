@@ -2,8 +2,8 @@ package com.techgadget.ecommerce.service;
 
 import com.techgadget.ecommerce.enums.OrderStatus;
 import com.techgadget.ecommerce.enums.PaymentStatus;
-import com.techgadget.ecommerce.dto.response.AddressResponse;
-import com.techgadget.ecommerce.dto.response.OrderResponse;
+import com.techgadget.ecommerce.dto.response.user.AddressResponse;
+import com.techgadget.ecommerce.dto.response.order.OrderResponse;
 import com.techgadget.ecommerce.entity.Order;
 import com.techgadget.ecommerce.exception.ConflictException;
 import com.techgadget.ecommerce.exception.NotFoundException;
@@ -79,7 +79,7 @@ public class PaymentService {
                         oi.getId(),
                         oi.getProduct().getId(),
                         oi.getProduct().getName(),
-                        oi.getProduct().getImageUrl(),
+                        oi.getProductImageKey(), // Image URL
                         oi.getQuantity(),
                         oi.getPriceAtOrder(),
                         oi.getSubtotal()

@@ -1,8 +1,8 @@
 package com.techgadget.ecommerce.controller;
 
-import com.techgadget.ecommerce.dto.request.AddCartItemRequest;
-import com.techgadget.ecommerce.dto.request.UpdateCartItemRequest;
-import com.techgadget.ecommerce.dto.response.CartResponse;
+import com.techgadget.ecommerce.dto.request.cart.AddCartItemRequest;
+import com.techgadget.ecommerce.dto.request.cart.UpdateCartItemRequest;
+import com.techgadget.ecommerce.dto.response.cart.CartResponse;
 import com.techgadget.ecommerce.dto.response.ErrorResponse;
 import com.techgadget.ecommerce.security.CustomUserDetails;
 import com.techgadget.ecommerce.service.CartService;

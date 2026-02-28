@@ -1,7 +1,8 @@
-package com.techgadget.ecommerce.dto.response;
+package com.techgadget.ecommerce.dto.response.order;
 
+import com.techgadget.ecommerce.dto.response.image.ImageResponse;
+import com.techgadget.ecommerce.dto.response.user.AddressResponse;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

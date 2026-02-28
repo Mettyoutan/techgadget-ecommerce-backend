@@ -1,5 +1,6 @@
-package com.techgadget.ecommerce.dto.response;
+package com.techgadget.ecommerce.dto.response.auth;
 
+import com.techgadget.ecommerce.dto.response.user.UserResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

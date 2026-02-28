@@ -1,4 +1,4 @@
-package com.techgadget.ecommerce.dto.request;
+package com.techgadget.ecommerce.dto.request.user;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;

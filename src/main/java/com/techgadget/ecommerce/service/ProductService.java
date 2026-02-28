@@ -1,8 +1,8 @@
 package com.techgadget.ecommerce.service;
 
-import com.techgadget.ecommerce.dto.request.CreateProductRequest;
+import com.techgadget.ecommerce.dto.request.product.CreateProductRequest;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
-import com.techgadget.ecommerce.dto.response.ProductResponse;
+import com.techgadget.ecommerce.dto.response.product.ProductListResponse;
 import com.techgadget.ecommerce.entity.Category;
 import com.techgadget.ecommerce.entity.Product;
 import com.techgadget.ecommerce.exception.NotFoundException;
@@ -26,48 +26,19 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     /**
-     * Get all paginated products
-     */
-    @Transactional(readOnly = true)
-    public PaginatedResponse<ProductResponse> getAllProducts(
-            int page,
-            int size,
-            String sortBy,
-            String sortDir
-    ) {
-        log.debug("Processing get all products - Page: {}, Size: {}, SortBy: {}, SortDir: {}",
-                page, size, sortBy, sortDir);
-
-        Sort.Direction sortDirection = getDirection(sortDir);
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(sortDirection, sortBy)
-        );
-
-        Page<Product> productPage = productRepository.findAll(pageable);
-
-        log.info("Successfully fetched {} products - Page {}/{}",
-                productPage.getNumberOfElements(),
-                page,
-                productPage.getTotalPages());
-
-        return mapPageToResponse(productPage);
-    }
-
-    /**
      * Get product by ID
      */
     @Transactional(readOnly = true)
-    public ProductResponse getProductById(Long productId) {
+    public ProductListResponse getProductById(Long productId) {
 
         log.debug("Processing get product by id - Product: {}", productId);
 
-        Product product = productRepository.findById(productId).orElseThrow(() -> {
-            log.warn("Product not found with id {}", productId);
-            return new NotFoundException("Product not found.");
-        });
+        Product product = productRepository
+                .findProductDetailById(productId) // Get single detail product
+                .orElseThrow(() -> {
+                    log.warn("Product not found with id {}", productId);
+                    return new NotFoundException("Product not found.");
+                });
 
         log.info("Successfully fetched product {}", product.getId());
 
@@ -78,7 +49,7 @@ public class ProductService {
      * Advanced search (name + category + price in rupiah)
      */
     @Transactional(readOnly = true)
-    public PaginatedResponse<ProductResponse> advancedSearch(
+    public PaginatedResponse<ProductListResponse> advancedSearch(
             String name,
             Long categoryId,
             Long minPrice,
@@ -110,14 +81,24 @@ public class ProductService {
                 throw new NotFoundException("Category not found.");
             }
 
-            productPage = productRepository.searchByNameAndCategory_IdAndPrice(
-                    name, categoryId, minPrice, maxPrice, pageable
-            );
+            if (minPrice == null || maxPrice == null) {
+                productPage = productRepository.findProductListByNameAndCategory_Id(
+                        name, categoryId, pageable);
+            } else {
+                productPage = productRepository.findProductListByNameAndCategory_IdAndPrice(
+                        name, categoryId, minPrice, maxPrice, pageable);
+            }
 
             log.debug("Running query -> productRepository.searchByNameAndCategory_IdAndPrice");
 
         } else {
-            productPage = productRepository.searchByNameAndPrice(name, minPrice, maxPrice, pageable);
+            if (minPrice == null || maxPrice == null) {
+                productPage = productRepository.findProductListByName(
+                        name, pageable);
+            } else {
+                productPage = productRepository.findProductListByNameAndPrice(
+                        name, minPrice, maxPrice, pageable);
+            }
 
             log.debug("Running query -> productRepository.searchByNameAndPrice");
         }
@@ -129,12 +110,11 @@ public class ProductService {
     }
 
 
-
     /**
      * Create product (admin)
      */
     @Transactional
-    public ProductResponse createProduct(CreateProductRequest request) {
+    public ProductListResponse createProduct(CreateProductRequest request) {
 
         log.debug("Processing create product (ADMIN) - Category: {}, ProductName: {}, Stock: {}",
                 request.getCategoryId(), request.getName(), request.getStockQuantity());
@@ -144,6 +124,7 @@ public class ProductService {
                 .orElseThrow(() -> new NotFoundException("Category not found."));
 
         // Create new product
+        // TODO: upload image first
         Product product = new Product(
                 category,
                 request.getName(),
@@ -203,8 +184,8 @@ public class ProductService {
     /**
      * Helper method for build paginated response
      */
-    private PaginatedResponse<ProductResponse> mapPageToResponse(Page<Product> productPage) {
-        PaginatedResponse<ProductResponse> response = new PaginatedResponse<>();
+    private PaginatedResponse<ProductListResponse> mapPageToResponse(Page<Product> productPage) {
+        PaginatedResponse<ProductListResponse> response = new PaginatedResponse<>();
         // Map Page<Product> into List<ProductResponse>
         response.setContent(productPage.map(this::mapProductToResponse).toList());
         response.setPageNumber(productPage.getNumber());
@@ -220,8 +201,8 @@ public class ProductService {
     /**
      * Helper method for build product response
      */
-    private ProductResponse mapProductToResponse(Product product) {
-        ProductResponse response = new ProductResponse();
+    private ProductListResponse mapProductToResponse(Product product) {
+        ProductListResponse response = new ProductListResponse();
         response.setId(product.getId());
         response.setName(product.getName());
         response.setDescription(product.getDescription());
@@ -230,7 +211,7 @@ public class ProductService {
         response.setImageUrl(product.getImageUrl());
         response.setSpecs(product.getSpecs());
 
-        ProductResponse.CategoryDto categoryDto = new ProductResponse.CategoryDto(
+        ProductListResponse.CategoryDto categoryDto = new ProductListResponse.CategoryDto(
                 product.getCategory().getId(),
                 product.getCategory().getName()
         );

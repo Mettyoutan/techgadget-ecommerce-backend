@@ -1,7 +1,6 @@
 package com.techgadget.ecommerce.unit_test;
 
-import com.techgadget.ecommerce.dto.response.PaginatedResponse;
-import com.techgadget.ecommerce.dto.response.ProductResponse;
+import com.techgadget.ecommerce.dto.response.product.ProductListResponse;
 import com.techgadget.ecommerce.entity.Category;
 import com.techgadget.ecommerce.entity.Product;
 import com.techgadget.ecommerce.exception.NotFoundException;
@@ -16,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -66,7 +64,7 @@ public class ProductTest {
         Mockito.when(productRepository.findById(Mockito.any()))
                 .thenReturn(Optional.of(product));
 
-        ProductResponse response =
+        ProductListResponse response =
                 productService.getProductById(1L);
 
         Assertions.assertNotNull(response);

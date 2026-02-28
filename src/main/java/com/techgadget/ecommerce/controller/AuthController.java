@@ -1,28 +1,22 @@
 package com.techgadget.ecommerce.controller;
 
-import com.techgadget.ecommerce.dto.request.LoginRequest;
-import com.techgadget.ecommerce.dto.request.RegisterRequest;
-import com.techgadget.ecommerce.dto.response.AuthResponse;
-import com.techgadget.ecommerce.dto.response.AuthServiceResponse;
+import com.techgadget.ecommerce.dto.request.auth.LoginRequest;
+import com.techgadget.ecommerce.dto.request.auth.RegisterRequest;
+import com.techgadget.ecommerce.dto.response.auth.AuthResponse;
+import com.techgadget.ecommerce.dto.response.auth.AuthServiceResponse;
 import com.techgadget.ecommerce.dto.response.ErrorResponse;
-import com.techgadget.ecommerce.exception.BadRequestException;
 import com.techgadget.ecommerce.security.CustomUserDetails;
 import com.techgadget.ecommerce.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import jakarta.persistence.Column;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,7 +24,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 
 @RestController
 @RequestMapping("/auth")

@@ -1,4 +1,8 @@
 package com.techgadget.ecommerce.dto.response.image;
 
-public class ImageResponse {
-}
+
+public record ImageResponse(
+        Long id,
+        String url,
+        boolean isPrimary
+) {}

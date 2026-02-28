@@ -1,8 +1,8 @@
 package com.techgadget.ecommerce.service;
 
-import com.techgadget.ecommerce.dto.request.CreateAddressRequest;
-import com.techgadget.ecommerce.dto.response.AddressResponse;
-import com.techgadget.ecommerce.dto.response.UserProfileResponse;
+import com.techgadget.ecommerce.dto.request.user.CreateAddressRequest;
+import com.techgadget.ecommerce.dto.response.user.AddressResponse;
+import com.techgadget.ecommerce.dto.response.user.UserProfileResponse;
 import com.techgadget.ecommerce.entity.Address;
 import com.techgadget.ecommerce.entity.User;
 import com.techgadget.ecommerce.exception.NotFoundException;

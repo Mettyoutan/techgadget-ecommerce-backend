@@ -1,10 +1,10 @@
 package com.techgadget.ecommerce.service;
 
 import com.techgadget.ecommerce.enums.OrderStatus;
-import com.techgadget.ecommerce.dto.request.CreateProductReviewRequest;
+import com.techgadget.ecommerce.dto.request.product.CreateProductReviewRequest;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
-import com.techgadget.ecommerce.dto.response.ProductReviewResponse;
-import com.techgadget.ecommerce.dto.response.UserResponse;
+import com.techgadget.ecommerce.dto.response.product.ProductReviewResponse;
+import com.techgadget.ecommerce.dto.response.user.UserResponse;
 import com.techgadget.ecommerce.entity.*;
 import com.techgadget.ecommerce.exception.ConflictException;
 import com.techgadget.ecommerce.exception.NotFoundException;

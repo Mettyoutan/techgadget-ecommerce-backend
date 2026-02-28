@@ -1,6 +1,7 @@
 package com.techgadget.ecommerce.entity;
 
 import com.techgadget.ecommerce.exception.ConflictException;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -28,12 +29,23 @@ public class OrderItem extends Auditable {
      * One CartItem can be in many OrderItem
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "product_id")
     private Product product;
+
+    @Column(nullable = false)
+    private String productName;
+
+    @Column(nullable = false)
+    private Long priceInRupiah;
+
 
     @Setter(AccessLevel.NONE)
     @Column(nullable = false)
     private Integer quantity;
+
+    // SNAPSHOT OF LATEST PRODUCT IMAGE
+    @Nullable
+    private String productImageKey;
 
     /**
      * Price of single product at time of order (order price != product price)
@@ -41,11 +53,18 @@ public class OrderItem extends Auditable {
     @Column(nullable = false)
     private Long priceAtOrder;
 
-    public OrderItem(Order order, Product product, Integer quantity, Long priceAtOrder) {
+    public OrderItem(
+            Order order,
+            Product product,
+            Integer quantity,
+            Long priceAtOrder,
+            String productImageKey
+    ) {
         this.order = order;
         this.product = product;
         this.quantity = quantity;
         this.priceAtOrder = priceAtOrder;
+        this.productImageKey = productImageKey;
     }
 
     /**

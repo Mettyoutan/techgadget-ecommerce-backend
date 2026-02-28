@@ -1,8 +1,8 @@
 package com.techgadget.ecommerce.unit_test;
 
-import com.techgadget.ecommerce.dto.request.LoginRequest;
-import com.techgadget.ecommerce.dto.request.RegisterRequest;
-import com.techgadget.ecommerce.dto.response.AuthServiceResponse;
+import com.techgadget.ecommerce.dto.request.auth.LoginRequest;
+import com.techgadget.ecommerce.dto.request.auth.RegisterRequest;
+import com.techgadget.ecommerce.dto.response.auth.AuthServiceResponse;
 import com.techgadget.ecommerce.entity.User;
 import com.techgadget.ecommerce.enums.UserRole;
 import com.techgadget.ecommerce.exception.ConflictException;

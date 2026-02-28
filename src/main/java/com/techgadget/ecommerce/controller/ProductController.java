@@ -1,10 +1,10 @@
 package com.techgadget.ecommerce.controller;
 
-import com.techgadget.ecommerce.dto.request.CreateProductRequest;
-import com.techgadget.ecommerce.dto.request.ProductSearchRequest;
+import com.techgadget.ecommerce.dto.request.product.CreateProductRequest;
+import com.techgadget.ecommerce.dto.request.product.ProductSearchRequest;
 import com.techgadget.ecommerce.dto.response.ErrorResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
-import com.techgadget.ecommerce.dto.response.ProductResponse;
+import com.techgadget.ecommerce.dto.response.product.ProductListResponse;
 import com.techgadget.ecommerce.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -45,7 +45,7 @@ public class ProductController {
     })
     @PostMapping
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<ProductResponse> createProduct(
+    public ResponseEntity<ProductListResponse> createProduct(
             @Valid @RequestBody CreateProductRequest request
     ) {
         var productResponse = productService.createProduct(request);
@@ -73,7 +73,7 @@ public class ProductController {
                     )),
     })
     @GetMapping("/search")
-    public ResponseEntity<PaginatedResponse<ProductResponse>> searchProducts(
+    public ResponseEntity<PaginatedResponse<ProductListResponse>> searchProducts(
             @Valid @ModelAttribute ProductSearchRequest request
     ) {
         var paginatedResponse = productService.advancedSearch(
@@ -108,7 +108,7 @@ public class ProductController {
                     )),
     })
     @GetMapping("{id}")
-    public ResponseEntity<ProductResponse> getProductById(@PathVariable("id") Long productId) {
+    public ResponseEntity<ProductListResponse> getProductById(@PathVariable("id") Long productId) {
         var productResponse = productService.getProductById(productId);
 
         return ResponseEntity.ok(productResponse);

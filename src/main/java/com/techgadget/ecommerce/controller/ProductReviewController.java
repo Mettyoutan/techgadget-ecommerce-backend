@@ -1,9 +1,9 @@
 package com.techgadget.ecommerce.controller;
 
-import com.techgadget.ecommerce.dto.request.CreateProductReviewRequest;
+import com.techgadget.ecommerce.dto.request.product.CreateProductReviewRequest;
 import com.techgadget.ecommerce.dto.request.PaginationRequest;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
-import com.techgadget.ecommerce.dto.response.ProductReviewResponse;
+import com.techgadget.ecommerce.dto.response.product.ProductReviewResponse;
 import com.techgadget.ecommerce.security.CustomUserDetails;
 import com.techgadget.ecommerce.service.ProductReviewService;
 import jakarta.validation.Valid;

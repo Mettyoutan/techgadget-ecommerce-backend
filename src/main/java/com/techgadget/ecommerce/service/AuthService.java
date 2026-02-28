@@ -1,10 +1,10 @@
 package com.techgadget.ecommerce.service;
 
-import com.techgadget.ecommerce.dto.request.LoginRequest;
-import com.techgadget.ecommerce.dto.request.RegisterRequest;
-import com.techgadget.ecommerce.dto.response.AuthResponse;
-import com.techgadget.ecommerce.dto.response.AuthServiceResponse;
-import com.techgadget.ecommerce.dto.response.UserResponse;
+import com.techgadget.ecommerce.dto.request.auth.LoginRequest;
+import com.techgadget.ecommerce.dto.request.auth.RegisterRequest;
+import com.techgadget.ecommerce.dto.response.auth.AuthResponse;
+import com.techgadget.ecommerce.dto.response.auth.AuthServiceResponse;
+import com.techgadget.ecommerce.dto.response.user.UserResponse;
 import com.techgadget.ecommerce.entity.RefreshToken;
 import com.techgadget.ecommerce.entity.User;
 import com.techgadget.ecommerce.exception.ConflictException;

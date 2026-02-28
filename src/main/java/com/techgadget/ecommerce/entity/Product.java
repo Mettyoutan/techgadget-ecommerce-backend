@@ -3,12 +3,14 @@ package com.techgadget.ecommerce.entity;
 import com.techgadget.ecommerce.exception.ConflictException;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -43,9 +45,9 @@ public class Product extends Auditable {
     @Column(nullable = false)
     private Integer stockQuantity;
 
-    @Nullable
-    @Column(length = 500)
-    private String imageUrl;
+    @Setter(value = AccessLevel.NONE)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductImage> images;
 
     /**
      * Product specifications using flexible JSONB
@@ -55,15 +57,23 @@ public class Product extends Auditable {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> specs;
 
-    public Product(Category category, String name, @Nullable String description, Long priceInRupiah, Integer stockQuantity, @Nullable String imageUrl, Map<String, Object> specs) {
+    public Product(Category category, String name, @Nullable String description, Long priceInRupiah, Integer stockQuantity, Map<String, Object> specs) {
         this.category = category;
         this.name = name;
         this.description = description;
         this.priceInRupiah = priceInRupiah;
         this.stockQuantity = stockQuantity;
-        this.imageUrl = imageUrl;
         this.specs = specs;
     }
+
+    public void addImage(ProductImage image) {
+        this.images.add(image);
+    }
+
+    public void removeImage(ProductImage image) {
+        this.images.remove(image);
+    }
+
 
     /**
      * Decrease stock

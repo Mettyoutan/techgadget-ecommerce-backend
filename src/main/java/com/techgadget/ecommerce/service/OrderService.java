@@ -3,11 +3,11 @@ package com.techgadget.ecommerce.service;
 import com.techgadget.ecommerce.enums.OrderStatus;
 import com.techgadget.ecommerce.enums.PaymentMethod;
 import com.techgadget.ecommerce.enums.PaymentStatus;
-import com.techgadget.ecommerce.dto.request.CreateOrderRequest;
-import com.techgadget.ecommerce.dto.request.OrderFilterRequest;
-import com.techgadget.ecommerce.dto.request.UpdateOrderStatusToShipRequest;
-import com.techgadget.ecommerce.dto.response.AddressResponse;
-import com.techgadget.ecommerce.dto.response.OrderResponse;
+import com.techgadget.ecommerce.dto.request.order.CreateOrderRequest;
+import com.techgadget.ecommerce.dto.request.order.OrderFilterRequest;
+import com.techgadget.ecommerce.dto.request.order.UpdateOrderStatusToShipRequest;
+import com.techgadget.ecommerce.dto.response.user.AddressResponse;
+import com.techgadget.ecommerce.dto.response.order.OrderResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.entity.*;
 import com.techgadget.ecommerce.exception.BadRequestException;
@@ -143,15 +143,27 @@ public class OrderService {
 
             log.debug("7 success");
 
-            // 8
+            /*
+                8 - Create OrderItem
+             */
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(null);
             orderItem.setProduct(cartItem.getProduct());
+            orderItem.setProductName(product.getName());
+                // Find single image for OrderItem
+                ProductImage selectedImage = product.getImages()
+                        .stream()
+                        .filter(ProductImage::isPrimary)
+                        .findFirst()
+                        .orElse(null);
+                String imageKey = selectedImage != null ? selectedImage.getObjectKey() : null;
+            orderItem.setProductImageKey(imageKey);
             orderItem.setQuantity(cartItem.getQuantity());
-                // Price of order item TODO: create discount
+            // Price of order item TODO: create discount
             orderItem.setPriceAtOrder(cartItem.getProduct().getPriceInRupiah());
 
-                // Add to orderItems
+
+            // Add to orderItems
             orderItems.add(orderItem);
 
             log.debug("8 success");

@@ -1,11 +1,9 @@
-package com.techgadget.ecommerce.dto.response;
+package com.techgadget.ecommerce.dto.response.user;
 
-import com.techgadget.ecommerce.entity.Address;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
 import java.util.Set;
 
 @Data

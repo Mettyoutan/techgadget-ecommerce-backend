@@ -1,9 +1,9 @@
 package com.techgadget.ecommerce.controller;
 
-import com.techgadget.ecommerce.dto.request.CreateOrderRequest;
-import com.techgadget.ecommerce.dto.request.OrderFilterRequest;
+import com.techgadget.ecommerce.dto.request.order.CreateOrderRequest;
+import com.techgadget.ecommerce.dto.request.order.OrderFilterRequest;
 import com.techgadget.ecommerce.dto.response.ErrorResponse;
-import com.techgadget.ecommerce.dto.response.OrderResponse;
+import com.techgadget.ecommerce.dto.response.order.OrderResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.security.CustomUserDetails;
 import com.techgadget.ecommerce.service.OrderService;

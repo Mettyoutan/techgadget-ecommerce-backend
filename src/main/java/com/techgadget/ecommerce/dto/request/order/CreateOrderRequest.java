@@ -1,9 +1,5 @@
-package com.techgadget.ecommerce.dto.request;
+package com.techgadget.ecommerce.dto.request.order;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.techgadget.ecommerce.entity.Address;
-import jakarta.persistence.Column;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

@@ -1,8 +1,8 @@
 package com.techgadget.ecommerce.controller;
 
-import com.techgadget.ecommerce.dto.request.CreateAddressRequest;
+import com.techgadget.ecommerce.dto.request.user.CreateAddressRequest;
 import com.techgadget.ecommerce.dto.response.ErrorResponse;
-import com.techgadget.ecommerce.dto.response.UserProfileResponse;
+import com.techgadget.ecommerce.dto.response.user.UserProfileResponse;
 import com.techgadget.ecommerce.security.CustomUserDetails;
 import com.techgadget.ecommerce.service.UserProfileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
