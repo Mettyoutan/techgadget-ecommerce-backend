@@ -6,8 +6,7 @@ import lombok.*;
 /**
  * Used for auth response to client
  */
-@Data
-@NoArgsConstructor
+@Getter
 @AllArgsConstructor
 public class AuthResponse {
 

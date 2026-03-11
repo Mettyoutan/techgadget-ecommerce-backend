@@ -24,6 +24,7 @@ import java.util.Objects;
 @NoArgsConstructor
 public class Order extends Auditable {
 
+    @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

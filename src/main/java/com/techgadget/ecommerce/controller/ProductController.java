@@ -4,6 +4,7 @@ import com.techgadget.ecommerce.dto.request.product.CreateProductRequest;
 import com.techgadget.ecommerce.dto.request.product.ProductSearchRequest;
 import com.techgadget.ecommerce.dto.response.ErrorResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
+import com.techgadget.ecommerce.dto.response.product.ProductDetailResponse;
 import com.techgadget.ecommerce.dto.response.product.ProductListResponse;
 import com.techgadget.ecommerce.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -45,12 +47,12 @@ public class ProductController {
     })
     @PostMapping
     @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<ProductListResponse> createProduct(
+    public ResponseEntity<ProductDetailResponse> createProduct(
             @Valid @RequestBody CreateProductRequest request
     ) {
         var productResponse = productService.createProduct(request);
 
-        return ResponseEntity.ok(productResponse);
+        return ResponseEntity.status(HttpStatus.CREATED).body(productResponse);
     }
 
     /**
@@ -107,8 +109,8 @@ public class ProductController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @GetMapping("{id}")
-    public ResponseEntity<ProductListResponse> getProductById(@PathVariable("id") Long productId) {
+    @GetMapping("/{productId}")
+    public ResponseEntity<ProductDetailResponse> getProductById(@PathVariable Long productId) {
         var productResponse = productService.getProductById(productId);
 
         return ResponseEntity.ok(productResponse);

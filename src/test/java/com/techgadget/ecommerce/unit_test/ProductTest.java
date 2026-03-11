@@ -1,5 +1,6 @@
 package com.techgadget.ecommerce.unit_test;
 
+import com.techgadget.ecommerce.dto.response.product.ProductDetailResponse;
 import com.techgadget.ecommerce.dto.response.product.ProductListResponse;
 import com.techgadget.ecommerce.entity.Category;
 import com.techgadget.ecommerce.entity.Product;
@@ -64,7 +65,7 @@ public class ProductTest {
         Mockito.when(productRepository.findById(Mockito.any()))
                 .thenReturn(Optional.of(product));
 
-        ProductListResponse response =
+        ProductDetailResponse response =
                 productService.getProductById(1L);
 
         Assertions.assertNotNull(response);

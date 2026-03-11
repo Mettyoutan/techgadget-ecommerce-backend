@@ -19,6 +19,7 @@ import java.util.Objects;
 @NoArgsConstructor
 public class Cart extends Auditable {
 
+    @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -48,7 +49,7 @@ public class Cart extends Auditable {
         // recalculate total price
         return this.items
                 .stream()
-                .mapToLong(item -> item.getProduct().getPriceInRupiah() * item.getQuantity())
+                .mapToLong(item -> item.getProduct().getPrice() * item.getQuantity())
                 .sum();
 
 

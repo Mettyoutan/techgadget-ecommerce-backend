@@ -18,6 +18,7 @@ import java.util.Set;
 @NoArgsConstructor
 public class User extends Auditable {
 
+    @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

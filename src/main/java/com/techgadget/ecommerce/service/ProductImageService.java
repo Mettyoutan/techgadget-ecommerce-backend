@@ -7,6 +7,7 @@ import com.techgadget.ecommerce.entity.ProductImage;
 import com.techgadget.ecommerce.exception.NotFoundException;
 import com.techgadget.ecommerce.repository.ProductImageRepository;
 import com.techgadget.ecommerce.repository.ProductRepository;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,7 @@ public class ProductImageService {
     @Transactional
     public ImageResponse upload(Long productId, MultipartFile file, boolean isPrimary) {
 
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findProductDetailById(productId)
                 .orElseThrow(() -> {
                     log.warn("Product {} not found.", productId);
                     return new NotFoundException("Product not found.");
@@ -43,13 +44,13 @@ public class ProductImageService {
         List<ProductImage> images = product.getImages();
 
         // Store image into MinIO
-        String objectKey = generateObjectKey(productId, file);
-        StoredImageDto imageDto = minioStorageService.store(file, objectKey);
+        String originalKey = generateOriginalKey(productId, file);
+        StoredImageDto imageDto = minioStorageService.store(file, originalKey);
 
         // Create product image & save
         ProductImage createdImage = new ProductImage();
         createdImage.setProduct(product);
-        createdImage.setObjectKey(imageDto.objectKey());
+        createdImage.setOriginalKey(imageDto.originalKey());
         createdImage.setThumbnailKey(imageDto.thumbnailKey()); // NULLABLE
 
         /*
@@ -59,15 +60,15 @@ public class ProductImageService {
             1) No primary image available
             2) Duplicate primary image
          */
-        ProductImage primaryImage = images.stream()
+        ProductImage currPrimary = images.stream()
                 .filter(ProductImage::isPrimary)
                 .findFirst()
                 .orElse(null);
-        if (isPrimary && primaryImage != null) {
+        if (isPrimary && currPrimary != null) {
             // Set new primary image
-            primaryImage.setPrimary(false);
+            currPrimary.setPrimary(false);
             createdImage.setPrimary(true);
-        } else if (!isPrimary && primaryImage == null) {
+        } else if (!isPrimary && currPrimary == null) {
             // Force createdImage to be primary
             createdImage.setPrimary(true);
         } else {
@@ -76,12 +77,22 @@ public class ProductImageService {
 
         productImageRepository.save(createdImage);
 
-        // If thumbnail exists, use thumbnail key
+        productRepository.save(product);
+
+        // If thumbnail exists, use thumbnail key to get Url
+        String imageUrl;
+
         if (createdImage.getThumbnailKey() != null) {
-            return new ImageResponse(createdImage.getId(), createdImage.getThumbnailKey(), createdImage.isPrimary());
+            imageUrl = getImageUrl(createdImage.getThumbnailKey());
+        } else {
+            imageUrl = getImageUrl(createdImage.getOriginalKey());
         }
 
-        return new ImageResponse(createdImage.getId(), createdImage.getObjectKey(), createdImage.isPrimary());
+        return new ImageResponse(
+                imageUrl,
+                createdImage.isPrimary()
+        );
+
     }
 
     /**
@@ -115,13 +126,14 @@ public class ProductImageService {
                     .findFirst()
                     .orElse(null);
             if (newPrimary != null) {
+                // Set primary status
                 newPrimary.setPrimary(true);
                 productImageRepository.save(newPrimary);
             }
         }
 
-        // Delete object image
-        minioStorageService.delete(image.getObjectKey());
+        // Delete original image
+        minioStorageService.delete(image.getOriginalKey());
 
         // Delete thumbnail image
         if (image.getThumbnailKey() != null) {
@@ -129,16 +141,22 @@ public class ProductImageService {
         }
 
         productImageRepository.delete(image);
-    }
 
-    public String getImageUrl(String objectOrThumbnailKey) {
-        return minioStorageService.generateViewUrl(objectOrThumbnailKey);
+        productRepository.save(product);
     }
 
     /**
-     * Generate custom object key
+     * Return product image url (NULLABLE)
      */
-    private String generateObjectKey(Long productId, MultipartFile file) {
+    @Nullable
+    public String getImageUrl(String objectKey) {
+        return minioStorageService.generateViewUrl(objectKey);
+    }
+
+    /**
+     * Generate custom original key
+     */
+    private String generateOriginalKey(Long productId, MultipartFile file) {
 
         // ext (.jpg, .png, etc)
         String ext = Optional.ofNullable(file.getOriginalFilename())

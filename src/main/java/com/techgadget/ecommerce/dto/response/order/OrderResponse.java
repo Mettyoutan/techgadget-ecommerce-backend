@@ -2,16 +2,13 @@ package com.techgadget.ecommerce.dto.response.order;
 
 import com.techgadget.ecommerce.dto.response.image.ImageResponse;
 import com.techgadget.ecommerce.dto.response.user.AddressResponse;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Builder
 public class OrderResponse {
 
     private Long id;
@@ -28,8 +25,7 @@ public class OrderResponse {
 
     private List<OrderItemResponse> items;
 
-    @Data
-    @NoArgsConstructor
+    @Getter
     @AllArgsConstructor
     public static class OrderItemResponse {
     

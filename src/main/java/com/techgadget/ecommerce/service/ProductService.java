@@ -2,9 +2,13 @@ package com.techgadget.ecommerce.service;
 
 import com.techgadget.ecommerce.dto.request.product.CreateProductRequest;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
+import com.techgadget.ecommerce.dto.response.image.ImageResponse;
+import com.techgadget.ecommerce.dto.response.product.CategoryResponse;
+import com.techgadget.ecommerce.dto.response.product.ProductDetailResponse;
 import com.techgadget.ecommerce.dto.response.product.ProductListResponse;
 import com.techgadget.ecommerce.entity.Category;
 import com.techgadget.ecommerce.entity.Product;
+import com.techgadget.ecommerce.entity.ProductImage;
 import com.techgadget.ecommerce.exception.NotFoundException;
 import com.techgadget.ecommerce.repository.CategoryRepository;
 import com.techgadget.ecommerce.repository.ProductRepository;
@@ -17,6 +21,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -24,12 +31,13 @@ public class ProductService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final ProductImageService productImageService;
 
     /**
      * Get product by ID
      */
     @Transactional(readOnly = true)
-    public ProductListResponse getProductById(Long productId) {
+    public ProductDetailResponse getProductById(Long productId) {
 
         log.debug("Processing get product by id - Product: {}", productId);
 
@@ -40,9 +48,10 @@ public class ProductService {
                     return new NotFoundException("Product not found.");
                 });
 
+
         log.info("Successfully fetched product {}", product.getId());
 
-        return mapProductToResponse(product);
+        return mapToProductDetailResponse(product);
     }
 
     /**
@@ -106,7 +115,7 @@ public class ProductService {
         log.info("Successfully fetched {} products using advanced search - Page: {}/{}",
                 productPage.getNumberOfElements(), page, productPage.getTotalPages());
 
-        return mapPageToResponse(productPage);
+        return mapToPaginatedProductListResponse(productPage);
     }
 
 
@@ -114,24 +123,22 @@ public class ProductService {
      * Create product (admin)
      */
     @Transactional
-    public ProductListResponse createProduct(CreateProductRequest request) {
+    public ProductDetailResponse createProduct(CreateProductRequest request) {
 
         log.debug("Processing create product (ADMIN) - Category: {}, ProductName: {}, Stock: {}",
-                request.getCategoryId(), request.getName(), request.getStockQuantity());
+                request.getCategoryId(), request.getName(), request.getStock());
 
         // Check if category exists
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new NotFoundException("Category not found."));
 
-        // Create new product
-        // TODO: upload image first
+        // Create new product (WITHOUT image)
         Product product = new Product(
                 category,
                 request.getName(),
                 request.getDescription(),
-                request.getPriceInRupiah(),
-                request.getStockQuantity(),
-                request.getImageUrl(),
+                request.getPrice(),
+                request.getStock(),
                 request.getSpecs()
         );
 
@@ -139,10 +146,10 @@ public class ProductService {
 
         log.info("Successfully created product {} - Price: {}, Stock: {}",
                 product.getId(),
-                product.getPriceInRupiah(),
-                product.getStockQuantity());
+                product.getPrice(),
+                product.getStock());
 
-        return mapProductToResponse(product);
+        return mapToProductDetailResponse(product);
     }
 
     /**
@@ -154,11 +161,12 @@ public class ProductService {
         log.debug("Processing deduct stock by {} quantity - Product: {}",
                 productId, quantity);
 
+        // Find product without any relation
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found."));
 
         // Decrease the stock quantity
-        product.decreaseStockQuantity(quantity);
+        product.decreaseStock(quantity);
 
         // Saved
         productRepository.save(product);
@@ -184,10 +192,11 @@ public class ProductService {
     /**
      * Helper method for build paginated response
      */
-    private PaginatedResponse<ProductListResponse> mapPageToResponse(Page<Product> productPage) {
+    private PaginatedResponse<ProductListResponse> mapToPaginatedProductListResponse(
+            Page<Product> productPage) {
         PaginatedResponse<ProductListResponse> response = new PaginatedResponse<>();
-        // Map Page<Product> into List<ProductResponse>
-        response.setContent(productPage.map(this::mapProductToResponse).toList());
+        // Map Page<Product> into List<ProductListResponse>
+        response.setContent(productPage.map(this::mapToProductListResponse).toList());
         response.setPageNumber(productPage.getNumber());
         response.setPageSize(productPage.getSize());
         response.setTotalPages(productPage.getTotalPages());
@@ -199,24 +208,76 @@ public class ProductService {
     }
 
     /**
-     * Helper method for build product response
+     * Helper method for build ProductList response
      */
-    private ProductListResponse mapProductToResponse(Product product) {
-        ProductListResponse response = new ProductListResponse();
-        response.setId(product.getId());
-        response.setName(product.getName());
-        response.setDescription(product.getDescription());
-        response.setPriceInRupiah(product.getPriceInRupiah());
-        response.setStockQuantity(product.getStockQuantity());
-        response.setImageUrl(product.getImageUrl());
-        response.setSpecs(product.getSpecs());
+    private ProductListResponse mapToProductListResponse(Product product) {
 
-        ProductListResponse.CategoryDto categoryDto = new ProductListResponse.CategoryDto(
+        /*
+            - Get primary image key
+            - Find the image url
+         */
+        String imageUrl = null;
+        String imageKey = product.getPrimaryImageKey();
+
+        if (imageKey != null) {
+            imageUrl = productImageService.getImageUrl(
+                    product.getPrimaryImageKey());
+        }
+
+        // Build category response
+        CategoryResponse categoryRes = new CategoryResponse(
                 product.getCategory().getId(),
                 product.getCategory().getName()
         );
-        response.setCategory(categoryDto);
 
-        return response;
+        return new ProductListResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStock(),
+                imageUrl,
+                product.getSpecs(),
+                categoryRes
+        );
+    }
+
+    /**
+     * Helper method for build ProductDetail response
+     */
+    private ProductDetailResponse mapToProductDetailResponse(Product product) {
+
+
+        // Get all image urls for product detail
+        List<ImageResponse> imageResponses = product.getImages()
+                .stream()
+                .map(i -> {
+
+                    String imageKey = i.getThumbnailKey() != null
+                            ? i.getThumbnailKey()
+                            : i.getOriginalKey();
+
+                    String url = productImageService.getImageUrl(imageKey);
+                    if (url == null) return null;
+
+                    return new ImageResponse(url, i.isPrimary());
+                })
+                .toList();
+
+        CategoryResponse categoryRes = new CategoryResponse(
+                product.getCategory().getId(),
+                product.getCategory().getName()
+        );
+
+        return new ProductDetailResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStock(),
+                imageResponses,
+                product.getSpecs(),
+                categoryRes
+        );
     }
 }

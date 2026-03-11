@@ -13,9 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateProductReviewRequest {
 
-    @NotNull(message = "Existing order is required.")
-    private Long orderId;
-
     @NotNull(message = "Rating is required.")
     @Min(value = 0, message = "Rating minimum value is 0.")
     @Max(value = 5, message = "Rating maximum value is 5.")

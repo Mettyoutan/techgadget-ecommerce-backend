@@ -14,6 +14,7 @@ import java.util.Objects;
 @Builder
 public class Address extends Auditable {
 
+    @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

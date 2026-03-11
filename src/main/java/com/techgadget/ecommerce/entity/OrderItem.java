@@ -17,6 +17,7 @@ import java.util.Objects;
 @NoArgsConstructor
 public class OrderItem extends Auditable {
 
+    @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,45 +27,43 @@ public class OrderItem extends Auditable {
     private Order order;
 
     /**
-     * One CartItem can be in many OrderItem
+     * Product snapshot fields
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    private Product product;
+    @Column(nullable = false)
+    private Long productIdSnapshot;
 
     @Column(nullable = false)
-    private String productName;
+    private String productNameSnapshot;
 
-    @Column(nullable = false)
-    private Long priceInRupiah;
+    @Nullable
+    private String productImageKeySnapshot;
 
-
-    @Setter(AccessLevel.NONE)
     @Column(nullable = false)
     private Integer quantity;
 
-    // SNAPSHOT OF LATEST PRODUCT IMAGE
-    @Nullable
-    private String productImageKey;
-
     /**
-     * Price of single product at time of order (order price != product price)
+     * Price/item at time of order (order price != product price)
      */
     @Column(nullable = false)
     private Long priceAtOrder;
 
+    @Column(nullable = false)
+    private boolean reviewed = false;
+
     public OrderItem(
             Order order,
-            Product product,
+            Long productIdSnapshot,
+            String productNameSnapshot,
+            @Nullable String productImageKeySnapshot,
             Integer quantity,
-            Long priceAtOrder,
-            String productImageKey
+            Long priceAtOrder
     ) {
         this.order = order;
-        this.product = product;
+        this.productIdSnapshot = productIdSnapshot;
+        this.productNameSnapshot = productNameSnapshot;
+        this.productImageKeySnapshot = productImageKeySnapshot;
         this.quantity = quantity;
         this.priceAtOrder = priceAtOrder;
-        this.productImageKey = productImageKey;
     }
 
     /**
@@ -72,18 +71,6 @@ public class OrderItem extends Auditable {
      */
     public Long getSubtotal() {
         return this.priceAtOrder * this.quantity;
-    }
-
-    /**
-     * Set quantity (check if quantity sufficient with stock)
-     * @throws ConflictException
-     */
-    public void setQuantity(int quantity) {
-        if (this.product.isQuantitySufficient(quantity)) {
-            this.quantity = quantity;
-        } else {
-            throw new ConflictException("Product stock is not sufficient for this quantity.");
-        }
     }
 
     @Override

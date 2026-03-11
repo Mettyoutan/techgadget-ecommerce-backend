@@ -4,12 +4,14 @@ import com.techgadget.ecommerce.enums.OrderStatus;
 import com.techgadget.ecommerce.entity.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,17 +21,17 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * Get order by id with
      * - items
      * - payment
-     * - products
      * - shipping address
      */
-    @Query("select o from Order o " +
-            "left join fetch o.shippingAddress " +
-            "left join fetch o.payment " +
-            "left join fetch o.items oi " +
-            "left join fetch oi.product " +
-            "where o.id = :orderId " +
-            "and o.user.id = :userId")
-    Optional<Order> findUserOrderByIdWithRelation(
+    @Query("""
+            select o from Order o
+            left join fetch o.shippingAddress
+            left join fetch o.payment
+            left join fetch o.items oi
+            where o.id = :orderId
+            and o.user.id = :userId
+            """)
+    Optional<Order> findUserOrderById(
             @Param("orderId") Long orderId,
             @Param("userId") Long userId
     );
@@ -47,7 +49,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where o.user.id = :userId " +
             "and (:orderStatus is null or o.orderStatus = :orderStatus) " +
             "and o.createdAt >= :fromDate " +
@@ -60,7 +61,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 and o.createdAt <= :toDate
                 """
     )
-    Page<Order> findUserOrdersBetweenDateWithRelation(
+    Page<Order> findUserOrdersBetweenDate(
             @Param("userId") Long userId,
             @Param("orderStatus") OrderStatus orderStatus,
             @Param("fromDate") LocalDateTime fromDate,
@@ -80,7 +81,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where o.user.id = :userId " +
             "and (:orderStatus is null or o.orderStatus = :orderStatus)",
             countQuery = """
@@ -89,7 +89,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 and (:orderStatus is null or o.orderStatus = :orderStatus)
                 """
     )
-    Page<Order> findUserOrdersWithRelation(
+    Page<Order> findUserOrders(
             @Param("userId") Long userId,
             @Param("orderStatus") OrderStatus orderStatus,
             Pageable pageable
@@ -107,7 +107,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where o.user.id = :userId " +
             "and (:orderStatus is null or o.orderStatus = :orderStatus) " +
             "and o.createdAt >= :fromDate ",
@@ -118,7 +117,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 and o.createdAt >= :fromDate
                 """
     )
-    Page<Order> findUserOrdersFromDateWithRelation(
+    Page<Order> findUserOrdersFromDate(
             @Param("userId") Long userId,
             @Param("orderStatus") OrderStatus orderStatus,
             @Param("fromDate") LocalDateTime fromDate,
@@ -137,7 +136,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where o.user.id = :userId " +
             "and (:orderStatus is null or o.orderStatus = :orderStatus) " +
             "and o.createdAt <= :toDate ",
@@ -148,7 +146,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 and o.createdAt <= :toDate
                 """
     )
-    Page<Order> findUserOrdersToDateWithRelation(
+    Page<Order> findUserOrdersToDate(
             @Param("userId") Long userId,
             @Param("orderStatus") OrderStatus orderStatus,
             @Param("toDate") LocalDateTime toDate,
@@ -159,13 +157,19 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where o.orderNumber = :orderNumber " +
             "and o.user.id = :userId")
-    Optional<Order> findUserOrderByOrderNumberWithRelation(
+    Optional<Order> findUserOrderByOrderNumber(
             @Param("orderNumber") String orderNumber,
             @Param("userId") Long userId
     );
+
+    /**
+     * Get all orders from user
+     *
+     */
+    @EntityGraph(attributePaths = {"shippingAddress", "payment", "items"})
+    List<Order> findUserOrderByUserId(Long userId);
 
     boolean existsByIdAndUser_Id(Long id, Long userId);
 
@@ -178,7 +182,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus)",
             countQuery = """
                 select count(o) from Order o
@@ -195,7 +198,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus) " +
             "and o.createdAt >= :fromDate " +
             "and o.createdAt <= :toDate ",
@@ -218,7 +220,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus) " +
             "and o.createdAt >= :fromDate ",
             countQuery = """
@@ -238,7 +239,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where (:orderStatus is null or o.orderStatus = :orderStatus) " +
             "and o.createdAt <= :toDate ",
             countQuery = """
@@ -257,7 +257,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "left join fetch o.shippingAddress " +
             "left join fetch o.payment " +
             "left join fetch o.items oi " +
-            "left join fetch oi.product " +
             "where o.id = :orderId")
     Optional<Order> findOrderByIdWithRelationForAdmin(@Param("orderId") Long orderId);
 }

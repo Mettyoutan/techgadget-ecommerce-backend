@@ -19,6 +19,7 @@ import java.util.Objects;
 @NoArgsConstructor
 public class CartItem extends Auditable {
 
+    @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -46,7 +47,7 @@ public class CartItem extends Auditable {
      */
     public Long getSubTotal() {
         // recalculate sub total
-        return this.product.getPriceInRupiah() * this.quantity;
+        return this.product.getPrice() * this.quantity;
     }
 
     /**
@@ -54,7 +55,7 @@ public class CartItem extends Auditable {
      * @throws ConflictException
      */
     public void setQuantity(int quantity) {
-        if (this.product.isQuantitySufficient(quantity)) {
+        if (this.product.isStockSufficient(quantity)) {
             this.quantity = quantity;
         } else {
             throw new ConflictException("Product stock is not sufficient for this quantity.");

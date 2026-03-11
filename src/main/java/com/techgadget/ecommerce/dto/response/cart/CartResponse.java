@@ -4,8 +4,7 @@ import lombok.*;
 
 import java.util.List;
 
-@Data
-@NoArgsConstructor
+@Getter
 @AllArgsConstructor
 public class CartResponse {
 
@@ -13,21 +12,19 @@ public class CartResponse {
     private Long totalPrice;
     private Integer totalItems;
 
-    @Data
-    @NoArgsConstructor
+    @Getter
     @AllArgsConstructor
     public static class CartItemResponse {
         private Long id;
         private Long productId;
         private String productName;
         private String imageUrl;
-        private Long priceInRupiah;
+        private Long price;
         private Integer quantity;
         private Long subtotal; // price * quantity
     }
 
-    @Data
-    @NoArgsConstructor
+    @Getter
     @AllArgsConstructor
     public static class CartCountResponse {
         private Integer count;

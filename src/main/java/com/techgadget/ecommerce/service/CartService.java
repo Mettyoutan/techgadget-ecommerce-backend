@@ -3,16 +3,10 @@
     import com.techgadget.ecommerce.dto.request.cart.AddCartItemRequest;
     import com.techgadget.ecommerce.dto.request.cart.UpdateCartItemRequest;
     import com.techgadget.ecommerce.dto.response.cart.CartResponse;
-    import com.techgadget.ecommerce.entity.Cart;
-    import com.techgadget.ecommerce.entity.CartItem;
-    import com.techgadget.ecommerce.entity.Product;
-    import com.techgadget.ecommerce.entity.User;
+    import com.techgadget.ecommerce.entity.*;
     import com.techgadget.ecommerce.exception.ConflictException;
     import com.techgadget.ecommerce.exception.NotFoundException;
-    import com.techgadget.ecommerce.repository.CartItemRepository;
-    import com.techgadget.ecommerce.repository.CartRepository;
-    import com.techgadget.ecommerce.repository.ProductRepository;
-    import com.techgadget.ecommerce.repository.UserRepository;
+    import com.techgadget.ecommerce.repository.*;
     import lombok.RequiredArgsConstructor;
     import lombok.extern.slf4j.Slf4j;
     import org.springframework.stereotype.Service;
@@ -30,6 +24,7 @@
         private final CartItemRepository cartItemRepository;
         private final UserRepository userRepository;
         private final ProductRepository productRepository;
+        private final ProductImageService productImageService;
 
         /**
          * Helper method to get cart entity
@@ -110,7 +105,7 @@
 
             } else {
                 // Check if product stock not sufficient to quantity
-                if (!product.isQuantitySufficient(request.getQuantity())) {
+                if (!product.isStockSufficient(request.getQuantity())) {
                     throw new ConflictException("Quantity not sufficient.");
                 }
 
@@ -225,32 +220,39 @@
 
         private CartResponse mapToCartResponse(Cart cart) {
 
-            // Create cart response
-            CartResponse cartResponse = new CartResponse();
-            cartResponse.setTotalItems(cart.getTotalItems());
-            cartResponse.setTotalPrice(cart.getTotalPrice());
-
-            // Create cart item response
+            // Build list of CartItemResponse
             List<CartResponse.CartItemResponse> items = new ArrayList<>();
             for (CartItem cartItem : cart.getItems()) {
-                CartResponse.CartItemResponse itemResponse = mapToCartItemResponse(cartItem);
-
-                items.add(itemResponse);
+                // Map to CartItemRes
+                items.add(mapToCartItemResponse(cartItem));
             }
-            cartResponse.setItems(items);
 
-            return cartResponse;
+            // Create cart response
+            return new CartResponse(
+                    items,
+                    cart.getTotalPrice(),
+                    cart.getTotalItems()
+            );
         }
 
         private CartResponse.CartItemResponse mapToCartItemResponse(CartItem cartItem) {
-            CartResponse.CartItemResponse itemResponse = new CartResponse.CartItemResponse();
-            itemResponse.setId(cartItem.getId());
-            itemResponse.setProductId(cartItem.getProduct().getId());
-            itemResponse.setProductName(cartItem.getProduct().getName());
-            itemResponse.setImageUrl(cartItem.getProduct().getImageUrl());
-            itemResponse.setQuantity(cartItem.getQuantity());
-            itemResponse.setPriceInRupiah(cartItem.getProduct().getPriceInRupiah());
-            itemResponse.setSubtotal(cartItem.getSubTotal());
-            return itemResponse;
+
+            // Get primary image URL
+            String primaryImageUrl = null;
+            String primaryImageKey = cartItem.getProduct().getPrimaryImageKey();
+            if (primaryImageKey != null) {
+                primaryImageUrl = productImageService.getImageUrl(primaryImageKey);
+            }
+
+            // Build CartItemResponse
+            return new CartResponse.CartItemResponse(
+                    cartItem.getId(),
+                    cartItem.getProduct().getId(),
+                    cartItem.getProduct().getName(),
+                    primaryImageUrl,
+                    cartItem.getProduct().getPrice(),
+                    cartItem.getQuantity(),
+                    cartItem.getSubTotal()
+            );
         }
     }

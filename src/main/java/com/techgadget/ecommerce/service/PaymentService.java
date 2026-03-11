@@ -1,5 +1,6 @@
 package com.techgadget.ecommerce.service;
 
+import com.techgadget.ecommerce.entity.OrderItem;
 import com.techgadget.ecommerce.enums.OrderStatus;
 import com.techgadget.ecommerce.enums.PaymentStatus;
 import com.techgadget.ecommerce.dto.response.user.AddressResponse;
@@ -14,6 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ public class PaymentService {
 
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
+    private final ProductImageService productImageService;
 
     /**
      * Using DUMMY payment
@@ -33,7 +38,7 @@ public class PaymentService {
         log.debug("Processing pay order - User: {}, Order: {}",
                 userId, orderId);
 
-        Order order = orderRepository.findUserOrderByIdWithRelation(orderId, userId)
+        Order order = orderRepository.findUserOrderById(orderId, userId)
                 .orElseThrow(() -> {
                     log.warn("Order not found with id = {} and user id = {}", orderId, userId);
                     return new NotFoundException("Order not found with id = " + orderId);
@@ -58,36 +63,31 @@ public class PaymentService {
     }
 
     private OrderResponse mapToOrderResponse(Order order) {
-        OrderResponse response = new OrderResponse();
-        response.setId(order.getId());
-        log.debug("set id");
-        response.setOrderNumber(order.getOrderNumber());
-        log.debug("set order number");
-        response.setOrderStatus(order.getOrderStatus().toString());
-        log.debug("set order status");
-        response.setPaymentStatus(order.getPayment().getPaymentStatus().toString());
-        log.debug("set payment status");
-        response.setTotalItems(order.getTotalItems());
-        log.debug("set total items");
-        response.setTotalPrice(order.getTotalPrice());
-        log.debug("set total price");
-        response.setCreatedAt(order.getCreatedAt());
-        log.debug("set created at");
 
-        response.setItems(order.getItems().stream()
-                .map(oi -> new OrderResponse.OrderItemResponse(
-                        oi.getId(),
-                        oi.getProduct().getId(),
-                        oi.getProduct().getName(),
-                        oi.getProductImageKey(), // Image URL
-                        oi.getQuantity(),
-                        oi.getPriceAtOrder(),
-                        oi.getSubtotal()
-                )).toList()
-        );
-        log.debug("set items");
+        // Build list of OrderItemResponse
+        List<OrderResponse.OrderItemResponse> itemResList = new ArrayList<>();
+        for (OrderItem item : order.getItems()) {
 
-        response.setShippingAddress(new AddressResponse(
+            // Get order image URL
+            String imageUrl = null;
+            String imageKey = item.getProductImageKeySnapshot();
+            if (imageKey != null) {
+                imageUrl = productImageService.getImageUrl(imageKey);
+            }
+
+            itemResList.add(new OrderResponse.OrderItemResponse(
+                        item.getId(),
+                        item.getProductIdSnapshot(),
+                        item.getProductNameSnapshot(),
+                        imageUrl, // Image URL
+                        item.getQuantity(),
+                        item.getPriceAtOrder(),
+                        item.getSubtotal()
+            ));
+        }
+
+        // Build shipping AddressResponse
+        AddressResponse shippingAddressRes = new AddressResponse(
                 order.getShippingAddress().getId(),
                 order.getShippingAddress().getRecipientName(),
                 order.getShippingAddress().getPhoneNumber(),
@@ -96,11 +96,19 @@ public class PaymentService {
                 order.getShippingAddress().getProvince(),
                 order.getShippingAddress().getPostalCode(),
                 order.getShippingAddress().getNotes()
-        ));
-        log.debug("set shipping address");
+        );
 
-        return response;
+        // Build OrderResponse
+        return OrderResponse.builder()
+                .id(order.getId())
+                .orderNumber(order.getOrderNumber())
+                .orderStatus(order.getOrderStatus().toString())
+                .paymentStatus(order.getPayment().getPaymentStatus().toString())
+                .totalPrice(order.getTotalPrice())
+                .totalItems(order.getTotalItems())
+                .createdAt(order.getCreatedAt())
+                .shippingAddress(shippingAddressRes)
+                .items(itemResList)
+                .build();
     }
-
-
 }

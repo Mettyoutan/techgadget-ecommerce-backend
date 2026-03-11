@@ -39,6 +39,7 @@ public class OrderService {
     private final AddressRepository addressRepository;
     private final ProductRepository productRepository;
     private final PaymentRepository paymentRepository;
+    private final ProductImageService productImageService;
 
     // -------------------------
     // --- CUSTOMER METHODS ---
@@ -126,7 +127,7 @@ public class OrderService {
             log.debug("5 success");
 
             // 6
-            if (!cartItem.getProduct().isQuantitySufficient(cartItem.getQuantity())) {
+            if (!cartItem.getProduct().isStockSufficient(cartItem.getQuantity())) {
                 log.warn("Product quantity insufficient for cart item with id = {} on product with id = {}",
                         cartItem.getId(), cartItem.getProduct().getId());
                 throw new ConflictException("Product quantity insufficient.");
@@ -136,8 +137,8 @@ public class OrderService {
 
             // 7
             Product product = cartItem.getProduct();
-            int newStock = product.getStockQuantity() - cartItem.getQuantity();
-            product.setStockQuantity(newStock);
+            int newStock = product.getStock() - cartItem.getQuantity();
+            product.setStock(newStock);
 
             productRepository.save(product);
 
@@ -148,20 +149,25 @@ public class OrderService {
              */
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(null);
-            orderItem.setProduct(cartItem.getProduct());
-            orderItem.setProductName(product.getName());
-                // Find single image for OrderItem
-                ProductImage selectedImage = product.getImages()
-                        .stream()
-                        .filter(ProductImage::isPrimary)
-                        .findFirst()
-                        .orElse(null);
-                String imageKey = selectedImage != null ? selectedImage.getObjectKey() : null;
-            orderItem.setProductImageKey(imageKey);
+            orderItem.setProductIdSnapshot(product.getId());
+            orderItem.setProductNameSnapshot(product.getName());
             orderItem.setQuantity(cartItem.getQuantity());
-            // Price of order item TODO: create discount
-            orderItem.setPriceAtOrder(cartItem.getProduct().getPriceInRupiah());
+            orderItem.setPriceAtOrder(product.getPrice());
 
+            // Find single image for OrderItem
+            ProductImage selectedImage = product.getImages()
+                    .stream()
+                    .filter(ProductImage::isPrimary)
+                    .findFirst()
+                    .orElse(null);
+
+            String imageKey = null;
+            if (selectedImage != null) {
+                imageKey = selectedImage.getThumbnailKey() != null
+                        ? selectedImage.getThumbnailKey()
+                        : selectedImage.getOriginalKey();
+            }
+            orderItem.setProductImageKeySnapshot(imageKey);
 
             // Add to orderItems
             orderItems.add(orderItem);
@@ -215,9 +221,9 @@ public class OrderService {
 
         // Get order with all relation
         Order finalOrder = orderRepository
-                .findUserOrderByIdWithRelation(order.getId(), userId)
+                .findUserOrderById(order.getId(), userId)
                 .orElseThrow(() -> {
-                    log.warn("Order not found with id = {}", order.getId());
+                    log.warn("Order {} not found", order.getId());
                     return new NotFoundException("Order not found.");
                 });
 
@@ -236,7 +242,7 @@ public class OrderService {
         log.debug("Processing cancel order - User: {}, OrderId: {}",
                 userId, orderId);
 
-        Order order = orderRepository.findUserOrderByIdWithRelation(orderId, userId)
+        Order order = orderRepository.findUserOrderById(orderId, userId)
                 .orElseThrow(() -> {
                     log.warn("Order not found with id = {} and user id = {}", orderId, userId);
                     return new NotFoundException("Order not found with id = " + orderId);
@@ -250,12 +256,22 @@ public class OrderService {
 
         // Restore stock
         for (OrderItem orderItem : order.getItems()) {
-            Product product = orderItem.getProduct();
-            int restoredStock = product.getStockQuantity() + orderItem.getQuantity();
-            product.setStockQuantity(restoredStock);
+            // Get the product
+            Product product = productRepository
+                    .findById(orderItem.getProductIdSnapshot())
+                    .orElseThrow(() -> {
+                        log.warn("Product {} not found - Order:{}",
+                                orderItem.getProductIdSnapshot());
+                        throw new NotFoundException("Product not found on item " + orderItem.getProductNameSnapshot());
+                    });
+
+            // Set restored Stock quantity
+            int restoredStock = product.getStock() + orderItem.getQuantity();
+            product.setStock(restoredStock);
             productRepository.save(product);
         }
 
+        // Set new order & payment status
         OrderStatus oldOrderStatus = order.getOrderStatus();
         order.setOrderStatus(OrderStatus.CANCELLED);
         order.getPayment().setPaymentStatus(PaymentStatus.FAILED);
@@ -313,7 +329,7 @@ public class OrderService {
         Page<Order> orderPage;
 
         if (fromDate != null && toDate != null) {
-            orderPage = orderRepository.findUserOrdersBetweenDateWithRelation(
+            orderPage = orderRepository.findUserOrdersBetweenDate(
                     userId,
                     orderStatus,
                     fromDate,
@@ -321,21 +337,21 @@ public class OrderService {
                     pageable
             );
         } else if (fromDate != null) {
-            orderPage = orderRepository.findUserOrdersFromDateWithRelation(
+            orderPage = orderRepository.findUserOrdersFromDate(
                     userId,
                     orderStatus,
                     fromDate,
                     pageable
             );
         } else if (toDate != null) {
-            orderPage = orderRepository.findUserOrdersToDateWithRelation(
+            orderPage = orderRepository.findUserOrdersToDate(
                     userId,
                     orderStatus,
                     toDate,
                     pageable
             );
         } else {
-            orderPage = orderRepository.findUserOrdersWithRelation(
+            orderPage = orderRepository.findUserOrders(
                     userId,
                     orderStatus,
                     pageable
@@ -357,7 +373,7 @@ public class OrderService {
         log.debug("Processing get user order by id - User: {}, OrderId: {}",
                 userId, orderId);
 
-        Order order = orderRepository.findUserOrderByIdWithRelation(orderId, userId)
+        Order order = orderRepository.findUserOrderById(orderId, userId)
                 .orElseThrow(() -> {
                     log.warn("Order not found with id = {} and user id = {}", orderId, userId);
                     return new NotFoundException("Order not found.");
@@ -607,47 +623,53 @@ public class OrderService {
     }
 
     private OrderResponse mapToOrderResponse(Order order) {
-        OrderResponse response = new OrderResponse();
-        response.setId(order.getId());
-        log.debug("set id");
-        response.setOrderNumber(order.getOrderNumber());
-        log.debug("set order number");
-        response.setOrderStatus(order.getOrderStatus().toString());
-        log.debug("set order status");
-        response.setPaymentStatus(order.getPayment().getPaymentStatus().toString());
-        log.debug("set payment status");
-        response.setTotalItems(order.getTotalItems());
-        log.debug("set total items");
-        response.setTotalPrice(order.getTotalPrice());
-        log.debug("set total price");
-        response.setCreatedAt(order.getCreatedAt());
-        log.debug("set created at");
 
-        response.setItems(order.getItems().stream()
-                .map(oi -> new OrderResponse.OrderItemResponse(
-                        oi.getId(),
-                        oi.getProduct().getId(),
-                        oi.getProduct().getName(),
-                        oi.getProduct().getImageUrl(),
-                        oi.getQuantity(),
-                        oi.getPriceAtOrder(),
-                        oi.getSubtotal()
-                )).toList()
+        List<OrderResponse.OrderItemResponse> itemResponses = new ArrayList<>();
+        for (OrderItem item : order.getItems()) {
+
+            // Get image url
+            String imageUrl = null;
+            String imageKey = item.getProductImageKeySnapshot();
+            if (imageKey != null) {
+                imageUrl = productImageService.getImageUrl(imageKey);
+            }
+
+            // Build ItemResponse
+            var itemRes = new OrderResponse.OrderItemResponse(
+                    item.getId(),
+                    item.getProductIdSnapshot(),
+                    item.getProductNameSnapshot(),
+                    imageUrl,
+                    item.getQuantity(),
+                    item.getPriceAtOrder(),
+                    item.getSubtotal()
+            );
+        }
+
+        // Build AddressResponse
+        Address address = order.getShippingAddress();
+        AddressResponse addressRes = new AddressResponse(
+                address.getId(),
+                address.getRecipientName(),
+                address.getPhoneNumber(),
+                address.getStreet(),
+                address.getCity(),
+                address.getProvince(),
+                address.getPostalCode(),
+                address.getNotes()
         );
-        log.debug("set items");
 
-        response.setShippingAddress(new AddressResponse(
-                order.getShippingAddress().getId(),
-                order.getShippingAddress().getRecipientName(),
-                order.getShippingAddress().getPhoneNumber(),
-                order.getShippingAddress().getStreet(),
-                order.getShippingAddress().getCity(),
-                order.getShippingAddress().getProvince(),
-                order.getShippingAddress().getPostalCode(),
-                order.getShippingAddress().getNotes()
-        ));
-        log.debug("set shipping address");
-
-        return response;
+        // Build OrderResponse
+        return OrderResponse.builder()
+                .id(order.getId())
+                .orderNumber(order.getOrderNumber())
+                .orderStatus(order.getOrderStatus().toString())
+                .paymentStatus(order.getPayment().getPaymentStatus().toString())
+                .totalPrice(order.getTotalPrice())
+                .totalItems(order.getTotalItems())
+                .createdAt(order.getCreatedAt())
+                .shippingAddress(addressRes)
+                .items(itemResponses)
+                .build();
     }
 }

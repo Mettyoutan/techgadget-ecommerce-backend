@@ -21,6 +21,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -31,6 +33,7 @@ public class ProductReviewService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
 
+    // TODO: create user order validation before create review
     @Transactional
     public ProductReviewResponse createReview(
             Long userId,
@@ -38,11 +41,8 @@ public class ProductReviewService {
             CreateProductReviewRequest request
     ) {
 
-        log.debug("Processing create review - User: {}, Product: {}, Order: {}, Rating: {}",
-                userId, productId, request.getOrderId(), request.getRating());
-
-        // Get order id
-        Long orderId = request.getOrderId();
+        log.debug("Processing create review - User: {}, Product: {}, Rating: {}",
+                userId, productId, request.getRating());
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
@@ -56,45 +56,40 @@ public class ProductReviewService {
                     return new NotFoundException("Product not found");
                 });
 
-        // 1. Check if the user order exists
-        Order order = orderRepository
-                .findUserOrderByIdWithRelation(orderId, userId)
-                .orElseThrow(() -> {
-                    log.warn("Order not found with order id = {} and user id = {}",
-                            orderId, userId);
-                    return new NotFoundException("User hasn't ordered yet");
-                });
+        // Check if user has ordered the product
+        OrderItem toBeReviewedItem = null;
 
-        // 2. Check if the order status is completed
-        if (!order.getOrderStatus().equals(OrderStatus.COMPLETED)) {
-            log.warn("User {} is trying to review order {} with status {}",
-                    userId, orderId, order.getOrderStatus());
-            throw new ConflictException("You can only review products from completed orders");
+        List<Order> userOrders = orderRepository
+                .findUserOrderByUserId(userId);
+
+        for (Order order : userOrders) {
+            OrderItem item = order.getItems().stream()
+                    .filter(i ->
+                            i.getProductIdSnapshot().equals(productId)
+                            && !i.isReviewed()
+                    )
+                    .findFirst()
+                    .orElse(null);
+            if (item != null) {
+                toBeReviewedItem = item;
+                break;
+            }
         }
 
-        // 3. Check if this order has that product
-        boolean hasProduct = order.getItems().stream()
-                .anyMatch(oi -> oi.getProduct().equals(product));
-
-        if (!hasProduct) {
-            log.warn("Product {} not found in order {} for user {}",
-                    productId, orderId, userId);
-            throw new NotFoundException("This product is not part of selected order");
+        if (toBeReviewedItem == null) {
+            log.warn("User {} tried to review Product {} but hasn't been ordered or already been reviewed",
+                    userId, productId);
+            throw new ConflictException("Product has not been ordered or already been reviewed.");
         }
 
-        // 4. Check if user already reviewed the product
-        if (productReviewRepository.existsByUser_IdAndProduct_Id(userId, productId)) {
-            log.warn("User {} already reviewed product {}", userId, productId);
-            throw new ConflictException("You have already reviewed this product");
-        }
-
-        // 5. Create product review
-        ProductReview productReview = new ProductReview();
-        productReview.setUser(user);
-        productReview.setProduct(product);
-        productReview.setRating(request.getRating());
-        productReview.setComment(request.getComment());
-
+        // Create product review
+        ProductReview productReview = new ProductReview(
+                user,
+                toBeReviewedItem,
+                product,
+                request.getRating(),
+                request.getComment()
+        );
         productReviewRepository.save(productReview);
 
         log.info("User {} successfully created review {} for product {}",
@@ -161,20 +156,22 @@ public class ProductReviewService {
 
     private ProductReviewResponse mapProductReviewToResponse(ProductReview pr) {
 
-        UserResponse userRes = new UserResponse();
-        userRes.setId(pr.getUser().getId());
-        userRes.setUsername(pr.getUser().getUsername());
-        userRes.setEmail(pr.getUser().getEmail());
-        userRes.setFullName(pr.getUser().getFullName());
+        // Create user response
+        User user = pr.getUser();
+        UserResponse userRes = new UserResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFullName()
+        );
 
-        ProductReviewResponse res = new ProductReviewResponse();
-        res.setId(pr.getId());
-        res.setUser(userRes);
-        res.setProductName(pr.getProduct().getName());
-        res.setRating(pr.getRating());
-        res.setComment(pr.getComment());
-        res.setCreatedAt(pr.getCreatedAt());
-
-        return res;
+        return new ProductReviewResponse(
+                pr.getId(),
+                pr.getProduct().getName(),
+                pr.getRating(),
+                pr.getComment(),
+                pr.getCreatedAt(),
+                userRes
+        );
     }
 }

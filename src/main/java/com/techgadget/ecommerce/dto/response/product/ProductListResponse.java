@@ -2,23 +2,23 @@ package com.techgadget.ecommerce.dto.response.product;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
 
-@Data
-@NoArgsConstructor
+@Getter
 @AllArgsConstructor
 public class ProductListResponse {
 
     private Long id;
     private String name;
     private String description;
-    private Long priceInRupiah;
-    private Integer stockQuantity;
+    private Long price;
+    private Integer stock;
 
     // Only need primary image
-    private String image;
+    private String imageUrl;
 
     private Map<String, Object> specs;
 

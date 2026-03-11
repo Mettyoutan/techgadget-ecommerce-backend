@@ -21,16 +21,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      */
     @Query(
             value = """
-                select p from Product p
-                left join p.images i
+                select distinct p from Product p
+                left join fetch p.images
                 where lower(p.name) like lower(concat('%', :name, '%') )
-                and i.isPrimary = true
             """,
             countQuery = """
                 select count(p) from Product p
-                left join p.images i
+                left join p.images
                 where lower(p.name) like lower(concat('%', :name, '%') )
-                and i.isPrimary = true
             """
     )
     Page<Product> findProductListByName(String name, Pageable pageable);
@@ -44,18 +42,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      */
     @Query(
             value = """
-                select p from Product p
-                join p.images i
+                select distinct p from Product p
+                left join fetch p.images
                 where lower(p.name) like lower(concat('%', :name, '%') )
                 and p.category.id = :categoryId
-                and i.isPrimary = true
             """,
             countQuery = """
-                select count(p) from Product p
-                join p.images i
+                select count(distinct p) from Product p
+                left join p.images
                 where lower(p.name) like lower(concat('%', :name, '%') )
                 and p.category.id = :categoryId
-                and i.isPrimary = true
             """
     )
     Page<Product> findProductListByNameAndCategory_Id(
@@ -73,20 +69,18 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      */
     @Query(
             value = """
-                select p from Product p
-                left join p.images i
+                select distinct p from Product p
+                left join fetch p.images
                 where lower(p.name) like lower(concat('%', :name, '%') )
                 and p.category.id = :categoryId
-                and p.priceInRupiah between :minPrice and :maxPrice
-                and i.isPrimary = true
+                and p.price between :minPrice and :maxPrice
             """,
             countQuery = """
-                select count(p) from Product p
-                left join p.images i
+                select count(distinct p) from Product p
+                left join p.images
                 where lower(p.name) like lower(concat('%', :name, '%') )
                 and p.category.id = :categoryId
-                and p.priceInRupiah between :minPrice and :maxPrice
-                and i.isPrimary = true
+                and p.price between :minPrice and :maxPrice
             """
     )
     Page<Product> findProductListByNameAndCategory_IdAndPrice(
@@ -106,18 +100,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      */
     @Query(
             value = """
-                select p from Product p
-                left join p.images i
+                select distinct p from Product p
+                left join fetch p.images
                 where lower(p.name) like lower(concat('%', :name, '%') )
-                and p.priceInRupiah between :minPrice and :maxPrice
-                and i.isPrimary = true
+                and p.price between :minPrice and :maxPrice
             """,
             countQuery = """
-                select count(p) from Product p
-                left join p.images i
+                select count(distinct p) from Product p
+                left join p.images
                 where lower(p.name) like lower(concat('%', :name, '%') )
-                and p.priceInRupiah between :minPrice and :maxPrice
-                and i.isPrimary = true
+                and p.price between :minPrice and :maxPrice
             """
     )
     Page<Product> findProductListByNameAndPrice(
@@ -134,16 +126,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      */
     @Query(
             value = """
-                select p from Product p
-                left join p.images i
-                where p.stockQuantity > 0
-                and i.isPrimary = true
+                select distinct p from Product p
+                left join fetch p.images
+                where p.stock > 0
             """,
             countQuery = """
-                select count(p) from Product p
-                left join p.images i
-                where p.stockQuantity > 0
-                and i.isPrimary = true
+                select count(distinct p) from Product p
+                left join p.images
+                where p.stock > 0
             """
     )
     Page<Product> findAvailableProductList(Pageable pageable);

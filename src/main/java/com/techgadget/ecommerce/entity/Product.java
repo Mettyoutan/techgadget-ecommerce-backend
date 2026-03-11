@@ -1,6 +1,7 @@
 package com.techgadget.ecommerce.entity;
 
 import com.techgadget.ecommerce.exception.ConflictException;
+import com.techgadget.ecommerce.exception.NotFoundException;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -10,6 +11,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +23,7 @@ import java.util.Objects;
 @NoArgsConstructor
 public class Product extends Auditable {
 
+    @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,17 +40,22 @@ public class Product extends Auditable {
     private String description;
 
     /**
+     * Price of each product
+     * -
      * Using long because of RUPIAH currency
      */
     @Column(nullable = false)
-    private Long priceInRupiah;
+    private Long price;
 
+    /**
+     * Total stock quantity
+     */
     @Column(nullable = false)
-    private Integer stockQuantity;
+    private Integer stock;
 
     @Setter(value = AccessLevel.NONE)
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductImage> images;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    private List<ProductImage> images = new ArrayList<>();
 
     /**
      * Product specifications using flexible JSONB
@@ -57,12 +65,12 @@ public class Product extends Auditable {
     @Column(columnDefinition = "jsonb")
     private Map<String, Object> specs;
 
-    public Product(Category category, String name, @Nullable String description, Long priceInRupiah, Integer stockQuantity, Map<String, Object> specs) {
+    public Product(Category category, String name, @Nullable String description, Long price, Integer stock, Map<String, Object> specs) {
         this.category = category;
         this.name = name;
         this.description = description;
-        this.priceInRupiah = priceInRupiah;
-        this.stockQuantity = stockQuantity;
+        this.price = price;
+        this.stock = stock;
         this.specs = specs;
     }
 
@@ -74,22 +82,49 @@ public class Product extends Auditable {
         this.images.remove(image);
     }
 
+    /**
+     * Get a primary image key of product
+     */
+    public String getPrimaryImageKey() {
+        ProductImage primary =  this.images.stream()
+                .filter(ProductImage::isPrimary)
+                .findFirst()
+                .orElse(null);
+
+        if (primary == null) return null;
+
+        return primary.getThumbnailKey() != null
+                ? primary.getThumbnailKey()
+                : primary.getOriginalKey();
+    }
+
+    /**
+     * Get all image keys of product
+     */
+    public List<String> getAllImageKey() {
+        return this.images.stream()
+                .map(i ->
+                        i.getThumbnailKey() != null
+                            ? i.getThumbnailKey()
+                            : i.getOriginalKey()
+                ).toList();
+    }
 
     /**
      * Decrease stock
      */
-    public void decreaseStockQuantity(int stockQuantity) {
-        if (this.stockQuantity - stockQuantity < 0) {
+    public void decreaseStock(int stock) {
+        if (this.stock - stock < 0) {
             throw new ConflictException("Stock quantity not sufficient.");
         }
-        this.stockQuantity = this.stockQuantity - stockQuantity;
+        this.stock = this.stock - stock;
     }
 
     /**
      * Check if stock quantity sufficient
      */
-    public boolean isQuantitySufficient(int quantity) {
-        return this.stockQuantity >= quantity;
+    public boolean isStockSufficient(int quantity) {
+        return this.stock >= quantity;
     }
 
     @Override

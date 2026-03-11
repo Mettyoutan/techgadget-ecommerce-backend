@@ -2,6 +2,7 @@ package com.techgadget.ecommerce.entity;
 
 import com.techgadget.ecommerce.dto.response.image.StoredImageDto;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,6 +16,7 @@ import java.util.Objects;
 @Setter
 public class ProductImage extends Auditable {
 
+    @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,26 +26,17 @@ public class ProductImage extends Auditable {
     private Product product;
 
     @Column(nullable = false)
-    private String objectKey;
+    private String originalKey;
 
     private String thumbnailKey;
 
-    private boolean isPrimary;
+    private boolean isPrimary = false;
 
-    public ProductImage(Product product, String objectKey, String thumbnailKey, boolean isPrimary) {
+    public ProductImage(Product product, String originalKey, String thumbnailKey, boolean isPrimary) {
         this.product = product;
-        this.objectKey = objectKey;
+        this.originalKey = originalKey;
         this.thumbnailKey = thumbnailKey;
         this.isPrimary = isPrimary;
-    }
-
-    public static ProductImage create(Product product, StoredImageDto stored, boolean isPrimary) {
-        return new ProductImage(
-                product,
-                stored.objectKey(),
-                stored.thumbnailKey(),
-                isPrimary
-        );
     }
 
     @Override

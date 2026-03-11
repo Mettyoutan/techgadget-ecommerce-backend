@@ -15,10 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -51,7 +48,6 @@ public class MinioStorageService {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
         } catch (Exception e) {
-            log.warn("Failed to check if bucket {} exists: {}", bucket, e.getMessage());
             throw new InternalServerException("Failed to ensure bucket.");
         }
     }
@@ -59,35 +55,35 @@ public class MinioStorageService {
     /**
      * Store object & create thumbnail (Optional)
      */
-    public StoredImageDto store(MultipartFile file, String objectKey) {
+    public StoredImageDto store(MultipartFile file, String originalKey) {
 
         try (InputStream is = file.getInputStream()) {
             // Upload original image object
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
-                            .object(objectKey)
+                            .object(originalKey)
                             .stream(is, file.getSize(), -1)
                             .contentType(file.getContentType())
                             .build()
             );
 
             // Upload thumbnail object
-            String thumbKey = uploadThumbnail(file, objectKey);
+            String thumbKey = uploadThumbnail(file, originalKey);
 
-            return new StoredImageDto(objectKey, thumbKey);
+            return new StoredImageDto(originalKey, thumbKey);
 
         } catch (ErrorResponseException e) {
             String code = e.errorResponse().code();
-            log.warn("MinIO failed to store image - Bucket={}, ObjectKey={}, Code={}",
-                    bucket, objectKey, e.errorResponse().code(), e
+            log.warn("MinIO failed to store image - Bucket={}, OriginalKey={}, Code={}",
+                    bucket, originalKey, e.errorResponse().code(), e
             );
             if ("EntityTooLarge".equals(code)) {
                 throw new ContentTooLargeException("Uploaded image is too large");
             }
             throw new InternalServerException("Failed to store image.");
         } catch (Exception e) {
-            log.error("Unexpected error while storing image - ObjectKey={}", objectKey, e);
+            log.error("Unexpected error while storing image - ObjectKey={}", originalKey, e);
             throw new InternalServerException("Failed to store image.");
         }
     }
@@ -112,19 +108,19 @@ public class MinioStorageService {
     /**
      * Get presigned url (GET method)
      */
-    public String generateViewUrl(String objectOrThumbnailKey) {
+    public String generateViewUrl(String objectKey) {
         try {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET) // only GET method
                             .bucket(bucket)
-                            .object(objectOrThumbnailKey)
+                            .object(objectKey)
                             .expiry(1, TimeUnit.HOURS)
                             .build()
             );
         } catch (Exception e) {
-            log.error("Failed to get presigned url - ObjectKey/ThumbnailKey={}", objectOrThumbnailKey, e);
-            throw new InternalServerException("Failed to get presigned url.");
+            log.warn("Failed to get presigned url - ObjectKey={}", objectKey, e);
+            return null; // Image is skipped
         }
     }
 
@@ -133,7 +129,10 @@ public class MinioStorageService {
      * -
      * Return thumbnailKey / null
      */
-    private String uploadThumbnail(MultipartFile file, String nonThumbnailKey) {
+    private String uploadThumbnail(MultipartFile file, String originalKey) {
+
+        // giraffe.jpg -> giraffe-thumb.jpg
+        String thumbKey = originalKey.replace(".", "-thumb.");
 
         try (
                 // baos for thumbnails output
@@ -145,9 +144,6 @@ public class MinioStorageService {
                     .size(400, 400)
                     .outputFormat("jpg")
                     .toOutputStream(baos);
-
-            // giraffe.jpg -> giraffe-thumb.jpg
-            String thumbKey = nonThumbnailKey.replace(".", "-thumb.");
 
             minioClient.putObject(
                     PutObjectArgs.builder()
@@ -161,8 +157,8 @@ public class MinioStorageService {
             return thumbKey;
 
         } catch (Exception e) {
-            log.warn("Failed to upload thumbnail - Bucket={}, ObjectKey={}",
-                    bucket, nonThumbnailKey);
+            log.warn("Failed to upload thumbnail - Bucket={}, ThumbKey={}",
+                    bucket, thumbKey);
             return null; // Thumbnail OPTIONAL
         }
 

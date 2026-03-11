@@ -25,14 +25,11 @@ public class CreateProductRequest {
     @NotNull(message = "Price required.")
     @Min(value = 1, message = "Price must be greater than 0.")
     @Max(value = 999999999999L, message = "Price too large.")
-    private Long priceInRupiah;
+    private Long price;
 
     @NotNull(message = "Stock quantity required.")
     @Min(value = 0, message = "Stock cannot be negative.")
-    private Integer stockQuantity;
-
-    @Size(max = 500, message = "Image URL max 500 characters.")
-    private String imageUrl;
+    private Integer stock;
 
     private Map<String, Object> specs;
 }

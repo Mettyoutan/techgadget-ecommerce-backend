@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -73,32 +74,28 @@ public class UserProfileService {
 
     private UserProfileResponse mapToUserProfile(User user) {
 
-        UserProfileResponse response = new UserProfileResponse();
-        response.setId(user.getId());
-        response.setUsername(user.getUsername());
-        response.setEmail(user.getEmail());
-        response.setPhoneNumber(user.getPhoneNumber());
-        response.setFullName(user.getFullName());
+        // Create Set of Address Response
+        Set<AddressResponse> addressResponses = user
+                .getAddresses()
+                .stream()
+                .map(address -> new AddressResponse(
+                        address.getId(),
+                        address.getRecipientName(),
+                        address.getPhoneNumber(),
+                        address.getStreet(),
+                        address.getCity(),
+                        address.getProvince(),
+                        address.getPostalCode(),
+                        address.getNotes()
+                )).collect(Collectors.toSet());
 
-        // Create Address Response DTO
-        Set<AddressResponse> addresses = new HashSet<>();
-
-        for (Address address : user.getAddresses()) {
-            AddressResponse ar = new AddressResponse();
-            ar.setId(address.getId());
-            ar.setRecipientName(address.getRecipientName());
-            ar.setPhoneNumber(address.getPhoneNumber());
-            ar.setStreet(address.getStreet());
-            ar.setCity(address.getCity());
-            ar.setProvince(address.getProvince());
-            ar.setPostalCode(address.getPostalCode());
-            ar.setNotes(address.getNotes());
-
-            addresses.add(ar);
-        }
-
-        response.setAddresses(addresses);
-
-        return response;
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getPhoneNumber(),
+                addressResponses
+        );
     }
 }

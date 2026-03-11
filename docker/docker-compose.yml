@@ -2,11 +2,12 @@ version: "3.9"
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:17
     container_name: techgadget-db
     restart: unless-stopped
 
     environment:
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
       POSTGRES_DB: techgadget_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -17,5 +18,26 @@ services:
     ports:
       - 5432:5432
 
+  minio:
+    image: minio/minio:RELEASE.2025-07-23T15-54-02Z
+    container_name: minio
+    restart: unless-stopped
+
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+
+    command:
+      - server
+      - /data
+      - --console-address
+      - ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console
+    volumes:
+      - minio_data:/data
+
 volumes:
   techgadget_pgdata:
+  minio_data:
