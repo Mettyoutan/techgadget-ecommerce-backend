@@ -23,7 +23,7 @@ public class ProductImageController {
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<ImageResponse> upload(
             @PathVariable Long productId,
-            @RequestParam MultipartFile file,
+            @RequestParam("file") MultipartFile file,
             @RequestParam(defaultValue = "false") boolean isPrimary
     ) {
         ImageResponse response = productImageService.upload(productId, file, isPrimary);

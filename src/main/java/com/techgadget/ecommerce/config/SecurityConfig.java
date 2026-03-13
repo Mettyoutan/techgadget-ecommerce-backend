@@ -64,8 +64,17 @@ public class SecurityConfig {
                         // Cart endpoint
                         .requestMatchers("/cart/**").hasAuthority(UserRole.CUSTOMER.toString())
 
-                        // Admin endpoint
+                        // Order endpoint
+                        .requestMatchers("/orders/**").hasAuthority(UserRole.CUSTOMER.toString())
+
+                        // Product Review endpoint
+                        .requestMatchers("/products/*/reviews").hasAuthority(UserRole.CUSTOMER.toString())
+
+                        /*
+                         Admin endpoint
+                         */
                         .requestMatchers("/admin/**").hasAuthority(UserRole.ADMIN.toString())
+                        .requestMatchers("/products/*/images/**").hasAuthority(UserRole.ADMIN.toString())
 
                         // Open API endpoint
                         .requestMatchers("/v3/api-docs").permitAll() // http://localhost:8080/api/v3/api-docs
@@ -102,7 +111,10 @@ public class SecurityConfig {
         CorsConfiguration cors = new CorsConfiguration();
 
         // Allow React localhost
-        cors.setAllowedOrigins(List.of("http://localhost:3000"));
+        cors.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://localhost:5173"
+        ));
 
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
