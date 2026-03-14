@@ -3,6 +3,7 @@ package com.techgadget.ecommerce.security;
 import com.techgadget.ecommerce.enums.RateLimitTier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RateLimitService {
 
-    private final RedisTemplate<String, String> stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     /**
      * 1) Delete timestamp outside window (by score)
@@ -72,7 +73,7 @@ public class RateLimitService {
                 uniqueMember
         );
 
-        return count != null && count <= tier.getMaxRequests();
+        return count != null && count < tier.getMaxRequests();
     }
 
     /**

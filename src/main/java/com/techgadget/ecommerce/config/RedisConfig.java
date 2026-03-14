@@ -1,6 +1,5 @@
 package com.techgadget.ecommerce.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,11 +16,11 @@ public class RedisConfig {
 
     @Bean
     @Primary
-    public RedisTemplate<String, String> stringRedisTemplate(
+    public StringRedisTemplate stringRedisTemplate(
             RedisConnectionFactory redisConnectionFactory
     ) {
         // Automatically configure serializer
-        RedisTemplate<String, String> template = new RedisTemplate<>();
+        StringRedisTemplate template = new StringRedisTemplate();
         template.setConnectionFactory(redisConnectionFactory);
 
         StringRedisSerializer stringRedisSerializer = new StringRedisSerializer();

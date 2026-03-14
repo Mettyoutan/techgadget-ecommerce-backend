@@ -18,7 +18,7 @@ public class ErrorResponse {
     private String code;
     private int status;
     private String message;
-    private List<String> details;
+    private List<String> details = null;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     @Setter(AccessLevel.NONE)
@@ -28,6 +28,7 @@ public class ErrorResponse {
         this.code = code;
         this.status = status;
         this.message = message;
+        this.details = null;
     }
 
     public ErrorResponse(String code, int status, String message, List<String> details) {

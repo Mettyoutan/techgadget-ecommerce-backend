@@ -28,7 +28,7 @@ public class ProductReviewController {
      * -
      * Create review for single product
      */
-    @PostMapping
+    @PostMapping("/")
     public ResponseEntity<ProductReviewResponse> createReview(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long productId,
@@ -51,7 +51,7 @@ public class ProductReviewController {
      * -
      * Get paginated review from single product
      */
-    @GetMapping
+    @GetMapping("/")
     @PreAuthorize("permitAll()")
     public ResponseEntity<PaginatedResponse<ProductReviewResponse>> getSingleProductReviews(
             @PathVariable Long productId,

@@ -43,7 +43,7 @@ public class AdminOrderController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @GetMapping
+    @GetMapping("/")
     public ResponseEntity<PaginatedResponse<OrderResponse>> searchAllOrders(
             @Valid @ModelAttribute OrderFilterRequest filter
     ) {
@@ -164,6 +164,8 @@ public class AdminOrderController {
     }
 
     /**
+     * Admin cancel customer order
+     * -
      * Update order status to cancel
      */
     @Operation(

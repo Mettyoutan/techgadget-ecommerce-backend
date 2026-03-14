@@ -4,6 +4,7 @@ import com.techgadget.ecommerce.enums.UserRole;
 import com.techgadget.ecommerce.security.AppAccessDeniedHandler;
 import com.techgadget.ecommerce.security.AppAuthenticationEntryPoint;
 import com.techgadget.ecommerce.security.JwtAuthenticationFilter;
+import com.techgadget.ecommerce.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,6 +34,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
     private final AppAuthenticationEntryPoint appAuthenticationEntryPoint;
     private final AppAccessDeniedHandler appAccessDeniedHandler;
 
@@ -41,7 +43,6 @@ public class SecurityConfig {
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
@@ -82,7 +83,10 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
                 )
+                // Add JwtFilter before UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // Add RateLimitFilter before JwtFilter
+                .addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class)
                 .build();
     }
 

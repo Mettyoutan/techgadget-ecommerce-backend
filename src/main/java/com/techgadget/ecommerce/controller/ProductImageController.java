@@ -20,7 +20,7 @@ public class ProductImageController {
      * -
      * Consumes multipart/form-data
      */
-    @PostMapping(consumes = "multipart/form-data")
+    @PostMapping(path = "/", consumes = "multipart/form-data")
     public ResponseEntity<ImageResponse> upload(
             @PathVariable Long productId,
             @RequestParam("file") MultipartFile file,

@@ -53,7 +53,7 @@ public class OrderController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @PostMapping
+    @PostMapping("/")
     public ResponseEntity<OrderResponse> createOrder(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody CreateOrderRequest request
@@ -144,7 +144,7 @@ public class OrderController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @GetMapping
+    @GetMapping("/")
     public ResponseEntity<PaginatedResponse<OrderResponse>> getUserOrders(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @ModelAttribute OrderFilterRequest filter
@@ -175,7 +175,7 @@ public class OrderController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @GetMapping("{orderId}")
+    @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrderById(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long orderId
@@ -186,6 +186,5 @@ public class OrderController {
 
         return ResponseEntity.ok(response);
     }
-
 
 }

@@ -46,7 +46,7 @@ public class CartController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @GetMapping
+    @GetMapping("/")
     public ResponseEntity<CartResponse> getCart(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
@@ -74,7 +74,7 @@ public class CartController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @PostMapping
+    @PostMapping("/")
     public ResponseEntity<CartResponse> addCartItemToCart(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody AddCartItemRequest request
@@ -160,7 +160,7 @@ public class CartController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @DeleteMapping
+    @DeleteMapping("/")
     public ResponseEntity<CartResponse> clearCart(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
