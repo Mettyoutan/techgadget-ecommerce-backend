@@ -1,7 +1,7 @@
 package com.techgadget.ecommerce.controller;
 
 import com.techgadget.ecommerce.dto.request.product.CreateProductRequest;
-import com.techgadget.ecommerce.dto.request.product.ProductSearchRequest;
+import com.techgadget.ecommerce.dto.request.product.SearchProductRequest;
 import com.techgadget.ecommerce.dto.response.ErrorResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.dto.response.product.ProductDetailResponse;
@@ -76,18 +76,10 @@ public class ProductController {
     })
     @GetMapping("/search")
     public ResponseEntity<PaginatedResponse<ProductListResponse>> searchProducts(
-            @Valid @ModelAttribute ProductSearchRequest request
+            @Valid @ModelAttribute SearchProductRequest request
     ) {
-        var paginatedResponse = productService.advancedSearch(
-                request.getName(),
-                request.getCategoryId(),
-                request.getMinPrice(),
-                request.getMaxPrice(),
-                request.getPage(),
-                request.getSize(),
-                request.getSortBy(),
-                request.getSortDir()
-        );
+        var paginatedResponse = productService
+                .searchProducts(request);
 
         return ResponseEntity.ok(paginatedResponse);
     }

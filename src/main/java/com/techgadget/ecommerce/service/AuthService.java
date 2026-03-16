@@ -56,7 +56,7 @@ public class AuthService {
 
         // Check duplicate and save
         try {
-            userRepository.save(user);
+            user = userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException("Email or Username already registered.");
         }
@@ -103,6 +103,17 @@ public class AuthService {
             throw new UnauthorizedException("Invalid username or password.");
         }
 
+        // (For Safety) Revoke all active refresh token from user
+        refreshTokenRepository.revokeAllUnrevokedByUser_Id(user.getId());
+
+        // TODO:
+//        // Make sure user doesn't have any active refresh token
+//        boolean isActiveRefreshExists = refreshTokenRepository
+//                .existsByUser_IdAndRevokedIsFalse(user.getId()); // Check if user has any active refresh token
+//        if (isActiveRefreshExists) {
+//            throw new UnauthorizedException("")
+//        }
+
         // Generate token
         String access = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getEmail());
@@ -129,7 +140,7 @@ public class AuthService {
     public AuthServiceResponse refresh(String refresh) {
         log.debug("Processing refresh request.");
 
-        // 1. Validate token & parse claims
+        // Validate token & parse claims
         Claims claims = jwtTokenProvider.validateToken(refresh);
 
         Long userId = claims.getSubject() != null
@@ -137,7 +148,7 @@ public class AuthService {
                 : null;
         String email = claims.get("email", String.class);
 
-        // 2. Validate jwt claim
+        // Make sure Jwt claims exists
         if (userId == null) {
             log.warn("Refresh failed - User not found on refresh");
             throw new UnauthorizedException("Invalid refresh token.");
@@ -148,38 +159,36 @@ public class AuthService {
             throw new UnauthorizedException("Invalid refresh token.");
         }
 
-        // 3. Get User
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.warn("User {} not found", userId);
                     return new NotFoundException("User not found.");
                 });
 
-        // 4. Get unrevoked refresh token
+        // Find requested refresh token & check if it's unrevoked
         RefreshToken curRefresh = refreshTokenRepository
                 .findByUser_IdAndRefreshAndRevokedIsFalse(userId, refresh)
                 .orElseThrow(() -> {
                     log.warn("Unrevoked refresh token not found for user {}", userId);
-                    return new UnauthorizedException("Refresh token not found.");
+                    return new UnauthorizedException("Active refresh token not found.");
                 });
 
-        // 5. Check if refresh is expired
+        // Check if refresh is expired
         if (curRefresh.isExpired()) {
             log.warn("Refresh token expired for user {}", userId);
             throw new UnauthorizedException("Invalid refresh token.");
         }
 
-        // 6. Revoked old refresh
-        curRefresh.setRevoked(true);
-        refreshTokenRepository.save(curRefresh);
+        // (FOR SAFETY) Revoked all active token from user
+        refreshTokenRepository.revokeAllUnrevokedByUser_Id(userId);
 
-        // 7. Create new access and refresh
+        // Create new access and refresh
         String access = jwtTokenProvider.generateAccessToken(
                 user.getId(), user.getEmail());
         String newRefresh = jwtTokenProvider.generateRefreshToken(
                 user.getId(), user.getEmail());
 
-        // 8. Add refresh to repo
+        // Add refresh to repo
         addRefreshToRepository(newRefresh, user);
 
         // Build response
@@ -207,12 +216,11 @@ public class AuthService {
                 .findByUser_IdAndRefreshAndRevokedIsFalse(userId, refresh)
                 .orElseThrow(() -> {
                     log.warn("Unrevoked refresh token not found - User: {}", userId);
-                    return new UnauthorizedException("Refresh token not found.");
+                    return new UnauthorizedException("Active refresh token not found.");
                 });
 
-        // Revoked refresh token
-        refreshToken.setRevoked(true);
-        refreshTokenRepository.save(refreshToken);
+        // (For Safety) Revoke all active refresh tokens
+        refreshTokenRepository.revokeAllUnrevokedByUser_Id(userId);
 
         UserResponse userRes = mapToUserResponse(user);
 
@@ -228,10 +236,9 @@ public class AuthService {
         Instant expiryDate = Instant.now().plusMillis(refreshExpirationInMs);
 
         RefreshToken refreshToken = new RefreshToken(
-                user, refresh, expiryDate
-        );
+                user, refresh, expiryDate);
 
-        refreshTokenRepository.save(refreshToken);
+        refreshToken = refreshTokenRepository.save(refreshToken);
 
         log.debug("User {} successfully added refresh token to repository",
                 user.getId());

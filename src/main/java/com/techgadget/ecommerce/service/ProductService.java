@@ -1,6 +1,7 @@
 package com.techgadget.ecommerce.service;
 
 import com.techgadget.ecommerce.dto.request.product.CreateProductRequest;
+import com.techgadget.ecommerce.dto.request.product.SearchProductRequest;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.dto.response.image.ImageResponse;
 import com.techgadget.ecommerce.dto.response.product.CategoryResponse;
@@ -8,7 +9,6 @@ import com.techgadget.ecommerce.dto.response.product.ProductDetailResponse;
 import com.techgadget.ecommerce.dto.response.product.ProductListResponse;
 import com.techgadget.ecommerce.entity.Category;
 import com.techgadget.ecommerce.entity.Product;
-import com.techgadget.ecommerce.entity.ProductImage;
 import com.techgadget.ecommerce.exception.NotFoundException;
 import com.techgadget.ecommerce.repository.CategoryRepository;
 import com.techgadget.ecommerce.repository.ProductRepository;
@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -32,6 +33,12 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final ProductImageService productImageService;
+
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "name",
+            "price",
+            "createdAt"
+    );
 
     /**
      * Get product by ID
@@ -58,28 +65,37 @@ public class ProductService {
      * Advanced search (name + category + price in rupiah)
      */
     @Transactional(readOnly = true)
-    public PaginatedResponse<ProductListResponse> advancedSearch(
-            String name,
-            Long categoryId,
-            Long minPrice,
-            Long maxPrice,
-            int page,
-            int size,
-            String sortBy,
-            String sortDir
+    public PaginatedResponse<ProductListResponse> searchProducts(
+            SearchProductRequest request
     ) {
+        String name = request.getName();
+        Long categoryId = request.getCategoryId();
+        Long minPrice = request.getMinPrice();
+        Long maxPrice = request.getMaxPrice();
+        int page = request.getPage();
+        int size = request.getSize();
+        String sortBy = request.getSortBy();
+        String sortDir = request.getSortDir();
 
-        log.debug("Processing advanced search - " +
+        log.debug("Search products with filter - " +
                 "ProductName: {}, Category: {}, MinPrice: {}, " +
                 "MaxPrice: {}, Page: {}, Size: {}, SortBy: {}, SortDir: {}",
-                name, categoryId, minPrice, maxPrice, page, size, sortBy, sortDir);
+                name,
+                categoryId,
+                minPrice,
+                maxPrice,
+                page,
+                size,
+                sortBy,
+                sortDir);
 
-        Sort.Direction direction = getDirection(sortDir);
+        Sort.Direction direction = resolveDirection(sortDir);
+        String sortField = resolveSortField(sortDir);
 
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by(direction, sortBy)
+                Sort.by(direction, sortField)
         );
 
         Page<Product> productPage;
@@ -90,22 +106,34 @@ public class ProductService {
                 throw new NotFoundException("Category not found.");
             }
 
-            if (minPrice == null || maxPrice == null) {
+            if (minPrice == null && maxPrice == null) {
                 productPage = productRepository.findProductListByNameAndCategory_Id(
                         name, categoryId, pageable);
+            } else if (minPrice != null && maxPrice == null) {
+                productPage = productRepository.findProductListByNameAndCategory_IdAndPriceGreaterThanEqual(
+                        name, categoryId, minPrice, pageable);
+            } else if (minPrice == null) {
+                productPage = productRepository.findProductListByNameAndCategory_IdAndPriceLessThanEqual(
+                        name, categoryId, maxPrice, pageable);
             } else {
-                productPage = productRepository.findProductListByNameAndCategory_IdAndPrice(
+                productPage = productRepository.findProductListByNameAndCategory_IdAndPriceBetween(
                         name, categoryId, minPrice, maxPrice, pageable);
             }
 
             log.debug("Running query -> productRepository.searchByNameAndCategory_IdAndPrice");
 
         } else {
-            if (minPrice == null || maxPrice == null) {
+            if (minPrice == null && maxPrice == null) {
                 productPage = productRepository.findProductListByName(
                         name, pageable);
+            } else if (minPrice != null && maxPrice == null) {
+                productPage = productRepository.findProductListByNameAndPriceGreaterThanEqual(
+                        name, minPrice, pageable);
+            } else if (minPrice == null) {
+                productPage = productRepository.findProductListByNameAndPriceLessThanEqual(
+                        name, maxPrice, pageable);
             } else {
-                productPage = productRepository.findProductListByNameAndPrice(
+                productPage = productRepository.findProductListByNameAndPriceBetween(
                         name, minPrice, maxPrice, pageable);
             }
 
@@ -176,9 +204,11 @@ public class ProductService {
     }
 
     /**
-     * Helper method for validate & get sort direction
+     * Helper method to validate & get sort direction
+     * -
+     * If direction invalid, default to "desc"
      */
-    private Sort.Direction getDirection(String sortDir) {
+    private Sort.Direction resolveDirection(String sortDir) {
         Sort.Direction direction;
         try {
             direction = Sort.Direction.fromString(sortDir);
@@ -187,6 +217,18 @@ public class ProductService {
             direction = Sort.Direction.DESC;
         }
         return direction;
+    }
+
+    /**
+     * helper method to validate sortBy
+     */
+    private String resolveSortField(String sortBy) {
+
+        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
+            return "createdAt";
+        }
+
+        return sortBy;
     }
 
     /**

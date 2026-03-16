@@ -1,6 +1,9 @@
 package com.techgadget.ecommerce.dto.request.product;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,12 +14,12 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-public class ProductSearchRequest {
+@AllArgsConstructor
+public class SearchProductRequest {
 
     /**
      * Pagination
      */
-
     @Min(value = 0, message = "Page minimum value is 0.")
     @NotNull(message = "Page is required.")
     private Integer page = 0;
@@ -35,22 +38,29 @@ public class ProductSearchRequest {
     /**
      * Search keyword
      */
-
     private String name = "";
 
+    @Nullable
     private Long categoryId;
 
+    @Nullable
     @Min(value = 0, message = "Minimum price is 0 rupiah.")
-    private Long minPrice = 0L;
+    private Long minPrice;
 
+    @Nullable
     @Max(value = 999_999_999_999L, message = "Maximum price is 999999999999 rupiah.")
-    private Long maxPrice = 999_999_999_999L;
+    private Long maxPrice;
 
     /**
      * Check if price is valid
      */
     @AssertTrue(message = "Minimum price cannot exceed max price.")
     private boolean isPriceValid() {
-        return minPrice.compareTo(maxPrice) <= 0;
+        if (minPrice != null && maxPrice != null) {
+            return minPrice.compareTo(maxPrice) <= 0;
+        }
+        return true;
     }
+
+
 }

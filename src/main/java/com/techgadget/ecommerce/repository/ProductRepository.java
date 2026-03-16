@@ -83,10 +83,56 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                 and p.price between :minPrice and :maxPrice
             """
     )
-    Page<Product> findProductListByNameAndCategory_IdAndPrice(
+    Page<Product> findProductListByNameAndCategory_IdAndPriceBetween(
             @Param("name") String name,
             @Param("categoryId") Long categoryId,
             @Param("minPrice") Long minPrice,
+            @Param("maxPrice") Long maxPrice,
+            Pageable pageable
+    );
+
+    @Query(
+            value = """
+                select distinct p from Product p
+                left join fetch p.images
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.category.id = :categoryId
+                and p.price >= :minPrice
+            """,
+            countQuery = """
+                select count(distinct p) from Product p
+                left join p.images
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.category.id = :categoryId
+                and p.price >= :minPrice
+            """
+    )
+    Page<Product> findProductListByNameAndCategory_IdAndPriceGreaterThanEqual(
+            @Param("name") String name,
+            @Param("categoryId") Long categoryId,
+            @Param("minPrice") Long minPrice,
+            Pageable pageable
+    );
+
+    @Query(
+            value = """
+                select distinct p from Product p
+                left join fetch p.images
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.category.id = :categoryId
+                and p.price <= :maxPrice
+            """,
+            countQuery = """
+                select count(distinct p) from Product p
+                left join p.images
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.category.id = :categoryId
+                and p.price <= :maxPrice
+            """
+    )
+    Page<Product> findProductListByNameAndCategory_IdAndPriceLessThanEqual(
+            @Param("name") String name,
+            @Param("categoryId") Long categoryId,
             @Param("maxPrice") Long maxPrice,
             Pageable pageable
     );
@@ -112,10 +158,50 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                 and p.price between :minPrice and :maxPrice
             """
     )
-    Page<Product> findProductListByNameAndPrice(
+    Page<Product> findProductListByNameAndPriceBetween(
             @Param("name") String name,
             @Param("minPrice") Long minPrice,
             @Param("maxPrice") Long maxPrice,
+            Pageable pageable
+    );
+
+    @Query(
+            value = """
+                select distinct p from Product p
+                left join fetch p.images
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.price >= :minPrice
+            """,
+            countQuery = """
+                select count(distinct p) from Product p
+                left join p.images
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.price >= :minPrice
+            """
+    )
+    Page<Product> findProductListByNameAndPriceGreaterThanEqual(
+            @Param("name") String name,
+            @Param("minPrice") long minPrice,
+            Pageable pageable
+    );
+
+    @Query(
+            value = """
+                select distinct p from Product p
+                left join fetch p.images
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.price <= :maxPrice
+            """,
+            countQuery = """
+                select count(distinct p) from Product p
+                left join p.images
+                where lower(p.name) like lower(concat('%', :name, '%') )
+                and p.price <= :maxPrice
+            """
+    )
+    Page<Product> findProductListByNameAndPriceLessThanEqual(
+            @Param("name") String name,
+            @Param("maxPrice") long maxPrice,
             Pageable pageable
     );
 

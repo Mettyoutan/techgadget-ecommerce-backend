@@ -9,6 +9,9 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * TODO: create device_id field for multi session
+ */
 @Entity
 @Table(name = "refresh_tokens", indexes = {
         @Index(name = "idx_user_id", columnList = "user_id"),

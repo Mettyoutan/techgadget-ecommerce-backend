@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ class AdminOrderControllerTest {
     @BeforeEach
     void setUp() {
         Product product1 = new Product();
-        product1.setId(1L);
+        ReflectionTestUtils.setField(product1, "id", 1L);
         product1.setName("product1");
         product1.setCategory(null);
     }
