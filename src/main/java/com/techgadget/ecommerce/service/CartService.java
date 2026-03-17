@@ -77,7 +77,7 @@
             // Get product & check stock
             Product product = productRepository.findById(request.getProductId())
                     .orElseThrow(() -> {
-                        log.warn("Product not found with id = {}.", request.getProductId());
+                        log.warn("Product {} not found", request.getProductId());
                         return new NotFoundException("Product not found.");
                     });
 
@@ -93,6 +93,13 @@
                 // Update new quantity to existing cart item
                 int oldQuantity = cartItem.getQuantity();
                 int newQuantity = oldQuantity + request.getQuantity();
+
+                if (!product.isStockSufficient(newQuantity)) {
+                    log.warn("User {} increases CartItem with new quantity {}, but stock not sufficient",
+                            userId, newQuantity);
+                    throw new ConflictException("Stock quantity not sufficient.");
+                }
+
                 cartItem.setQuantity(newQuantity);
 
                 int index = cart.getItems().indexOf(cartItem);
@@ -100,13 +107,15 @@
                     cart.getItems().set(index, cartItem);  // Force update reference
                 }
 
-                log.debug("Updated existing cart item - CartItem: {}, Product: {}, Quantity: {} -> {}",
+                log.debug("Updated existing cart item: CartItem={}, Product={}, Quantity={} -> {}",
                         cartItem.getId(), product.getId(), oldQuantity, newQuantity);
 
             } else {
                 // Check if product stock not sufficient to quantity
                 if (!product.isStockSufficient(request.getQuantity())) {
-                    throw new ConflictException("Quantity not sufficient.");
+                    log.warn("User {} adds new CartItem with quantity {}, but stock not sufficient",
+                            userId, request.getQuantity());
+                    throw new ConflictException("Stock quantity not sufficient.");
                 }
 
                 // Create new cart item & add to cart
@@ -118,7 +127,7 @@
             }
 
             // Save cart
-            cartRepository.save(cart);
+            cart = cartRepository.save(cart);
 
             log.info("User {} successfully added product {} to cart {} - Quantity: {}, " +
                             "Cart Total Items: {}, Cart Value: Rp {}",
@@ -127,7 +136,7 @@
                     cart.getId(),
                     request.getQuantity(),
                     cart.getItems().size(),
-                    cart.getTotalItems());
+                    cart.getTotalItemsQuantity());
 
             return mapToCartResponse(cart);
         }
@@ -167,7 +176,7 @@
          */
         @Transactional
         public CartResponse removeCartItem(Long userId, Long cartItemId) {
-            log.debug("Processing remove cart item - User: {}, CartItem: {}",
+            log.debug("Processing remove cart item: User={}, CartItem={}",
                     userId, cartItemId);
 
             Cart cart = getOrCreateCartEntity(userId);
@@ -177,7 +186,7 @@
                     .stream()
                     .filter(ci -> ci.getId().equals(cartItemId)).findFirst()
                     .orElseThrow(() -> {
-                        log.warn("Cart item not found with id = {} - user id = {}.", cartItemId, userId);
+                        log.warn("CartItem {} not found: User={}.", cartItemId, userId);
                         return new NotFoundException("Cart item not found.");
                     });
 
@@ -213,9 +222,9 @@
             Cart cart = getOrCreateCartEntity(userId);
 
             log.info("User {} got total {} cart items on cart {}",
-                    userId, cart.getTotalItems(), cart.getId());
+                    userId, cart.getTotalItemsQuantity(), cart.getId());
 
-            return new CartResponse.CartCountResponse(cart.getTotalItems());
+            return new CartResponse.CartCountResponse(cart.getTotalItemsQuantity());
         }
 
         private CartResponse mapToCartResponse(Cart cart) {
@@ -231,7 +240,7 @@
             return new CartResponse(
                     items,
                     cart.getTotalPrice(),
-                    cart.getTotalItems()
+                    cart.getTotalItemsQuantity()
             );
         }
 

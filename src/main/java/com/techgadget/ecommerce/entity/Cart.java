@@ -51,14 +51,12 @@ public class Cart extends Auditable {
                 .stream()
                 .mapToLong(item -> item.getProduct().getPrice() * item.getQuantity())
                 .sum();
-
-
     }
 
     /**
-     * Get total items in cart
+     * Get total items quantity in cart
      */
-    public Integer getTotalItems() {
+    public Integer getTotalItemsQuantity() {
         // recalculate total items
         return this.items
                 .stream()
