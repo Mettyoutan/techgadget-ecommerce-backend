@@ -14,6 +14,7 @@ import com.techgadget.ecommerce.exception.BadRequestException;
 import com.techgadget.ecommerce.exception.ConflictException;
 import com.techgadget.ecommerce.exception.NotFoundException;
 import com.techgadget.ecommerce.repository.*;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -60,7 +61,7 @@ public class OrderService {
                 request.getAddressId(),
                 request.getPaymentMethod());
 
-        // 0. Check if requested cart items > 0
+        // Make sure item not empty (Preventive - even already checked by Java Validation)
         if (request.getCartItemIds() == null || request.getCartItemIds().isEmpty()) {
             log.warn("Requested cart items is empty for order creation with user id = {}", userId);
             throw new BadRequestException("No cart items selected");
@@ -190,7 +191,7 @@ public class OrderService {
             order.addItem(orderItem);
         }
 
-        orderRepository.save(order);
+        order = orderRepository.save(order);
 
         log.debug("10 success");
 
@@ -209,26 +210,29 @@ public class OrderService {
         payment.setPaymentStatus(PaymentStatus.PENDING);
         payment.setPaymentMethod(paymentMethod);
 
-        paymentRepository.save(payment);
+        payment = paymentRepository.save(payment);
 
         log.debug("11 success");
 
         // 12. Set the payment to Order Entity
         order.setPayment(payment);
-        orderRepository.save(order);
+        order = orderRepository.save(order);
 
         log.debug("12 success");
 
         // Get order with all relation
+        Order tempOrder = order;
         Order finalOrder = orderRepository
                 .findUserOrderById(order.getId(), userId)
                 .orElseThrow(() -> {
-                    log.warn("Order {} not found", order.getId());
+                    log.warn("Order {} not found", tempOrder.getId());
                     return new NotFoundException("Order not found.");
                 });
 
-        log.info("User {} successfully created order {} - TotalItems = {}",
+        log.info("User {} successfully created order {} - TotalItems={}",
                 finalOrder.getId(), userId, finalOrder.getTotalItems());
+        log.debug("OrderNumber:{}, OrderStatus:{}, Payment: {}",
+                finalOrder.getOrderNumber(), finalOrder.getOrderStatus(), finalOrder.getPayment());
 
         return mapToOrderResponse(finalOrder);
     }
@@ -236,22 +240,26 @@ public class OrderService {
     /**
      * Cancel the order and RESTORE product stock
      * Only allowed if order is still pending
+     * TODO: allowed paid order to be cancelled
      */
     @Transactional
     public OrderResponse cancelOrder(Long userId, Long orderId) {
-        log.debug("Processing cancel order - User: {}, OrderId: {}",
+        log.debug("Processing cancel order: User={}, Order={}",
                 userId, orderId);
 
         Order order = orderRepository.findUserOrderById(orderId, userId)
                 .orElseThrow(() -> {
                     log.warn("Order not found with id = {} and user id = {}", orderId, userId);
-                    return new NotFoundException("Order not found with id = " + orderId);
+                    return new NotFoundException("Order not found.");
                 });
 
-        if (order.getOrderStatus() != OrderStatus.PENDING) {
-            log.warn("Cannot cancel order with id {} because status is {}",
+        OrderStatus orderStatus = order.getOrderStatus();
+        if (orderStatus != OrderStatus.PENDING) {
+            log.warn("Cannot cancel order {} because status is {}",
                     orderId, order.getOrderStatus());
-            throw new ConflictException("Only PENDING order can be cancelled");
+            throw new ConflictException("%s order cannot be cancelled.".formatted(
+                    orderStatus.toString().charAt(0) + orderStatus.toString().substring(1).toLowerCase())
+            );
         }
 
         // Restore stock
@@ -260,9 +268,9 @@ public class OrderService {
             Product product = productRepository
                     .findById(orderItem.getProductIdSnapshot())
                     .orElseThrow(() -> {
-                        log.warn("Product {} not found - Order:{}",
-                                orderItem.getProductIdSnapshot());
-                        throw new NotFoundException("Product not found on item " + orderItem.getProductNameSnapshot());
+                        log.warn("Product with id snapshot {} not found: Order={}, OrderItem:{}",
+                                orderItem.getProductIdSnapshot(), orderId, orderItem.getId());
+                        return new NotFoundException("Product id snapshot not found.");
                     });
 
             // Set restored Stock quantity
@@ -297,7 +305,7 @@ public class OrderService {
                 userId, filter.getStatus(), filter.getFromDate(), filter.getToDate());
 
         // Convert filter.status to OrderStatus -- NULLABLE
-        OrderStatus orderStatus = null;
+        @Nullable OrderStatus orderStatus = null;
         if (filter.getStatus() != null) {
             try {
                 orderStatus = OrderStatus.valueOf(filter.getStatus().toUpperCase());
@@ -644,6 +652,8 @@ public class OrderService {
                     item.getPriceAtOrder(),
                     item.getSubtotal()
             );
+
+            itemResponses.add(itemRes);
         }
 
         // Build AddressResponse

@@ -2,6 +2,7 @@ package com.techgadget.ecommerce.dto.request.order;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -15,6 +16,7 @@ import java.time.LocalDate;
  */
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class OrderFilterRequest {
 
     @Nullable

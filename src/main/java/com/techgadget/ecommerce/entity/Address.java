@@ -10,8 +10,6 @@ import java.util.Objects;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Address extends Auditable {
 
     @Setter(AccessLevel.NONE)
@@ -48,7 +46,6 @@ public class Address extends Auditable {
     /**
      * Default address or not
      */
-    @Builder.Default
     @Column(nullable = false)
     private Boolean isDefault = false;
 
