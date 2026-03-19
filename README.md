@@ -187,6 +187,17 @@ return count
 
 All four operations execute atomically in a single Redis roundtrip. A non-atomic approach would introduce a race condition between the count check and the add.
 
+### 5. Service Layer Returns DTOs Directly
+**Problem:** In a layered architecture, there is a choice where entity-to-DTO mapping should happen — in the controller, or in the service. Each placement has different implications for how tightly the layers are coupled.
+
+**Decision:** Services map entities to DTOs internally and return DTOs directly to controllers. Controllers are kept thin — they handle routing, request validation, and HTTP responses, but have no knowledge of how data is shaped.
+
+**Why this matters:** This prevents controllers from accidentally exposing entity internals or making mapping decisions that belong to the business layer. It also means the contract between service and controller is explicit — a service method's return type is exactly what the API will return, with no intermediate transformation step.
+
+**The tradeoff:** This approach couples the service layer to the DTO layer. If two different consumers needed different representations of the same data, the service would need separate methods or a more complex internal mapping strategy. For this project with a single API consumer, that scenario does not arise, and the simplicity of the current approach outweighs the theoretical flexibility of returning entities.
+
+> *I noticed this pattern after the project was already built. Refactoring at that point would have been a large effort for no functional gain — so instead I made sure I understood the tradeoff and could articulate it. That felt more useful than changing code that already works.*
+
 ---
 
 ## API Documentation

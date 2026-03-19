@@ -48,7 +48,7 @@ public class MinioStorageService {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
         } catch (Exception e) {
-            throw new InternalServerException("Failed to ensure bucket.");
+            throw new InternalServerException();
         }
     }
 
@@ -81,10 +81,10 @@ public class MinioStorageService {
             if ("EntityTooLarge".equals(code)) {
                 throw new ContentTooLargeException("Uploaded image is too large");
             }
-            throw new InternalServerException("Failed to store image.");
+            throw new InternalServerException();
         } catch (Exception e) {
             log.error("Unexpected error while storing image - ObjectKey={}", originalKey, e);
-            throw new InternalServerException("Failed to store image.");
+            throw new InternalServerException();
         }
     }
 
@@ -101,7 +101,7 @@ public class MinioStorageService {
             );
         } catch (Exception e) {
             log.error("Failed to remove image - ObjectKey={}", objectKey, e);
-            throw new InternalServerException("Failed to remove image.");
+            throw new InternalServerException();
         }
     }
 

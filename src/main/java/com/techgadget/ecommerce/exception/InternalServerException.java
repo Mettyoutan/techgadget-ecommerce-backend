@@ -3,7 +3,9 @@ package com.techgadget.ecommerce.exception;
 import org.springframework.http.HttpStatus;
 
 public class InternalServerException extends BaseException {
-    public InternalServerException(String message) {
-        super(HttpStatus.INTERNAL_SERVER_ERROR, message);
+    static final String MESSAGE = "An unexpected error occurred. Please try again later.";
+
+    public InternalServerException() {
+        super(HttpStatus.INTERNAL_SERVER_ERROR, MESSAGE);
     }
 }

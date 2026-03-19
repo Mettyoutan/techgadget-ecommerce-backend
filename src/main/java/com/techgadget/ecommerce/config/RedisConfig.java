@@ -31,15 +31,11 @@ public class RedisConfig {
         template.setValueSerializer(stringRedisSerializer);
         template.setHashValueSerializer(stringRedisSerializer);
 
-        // Enable transaction
-        template.setEnableTransactionSupport(true);
-
         template.afterPropertiesSet();
         return template;
     }
 
     @Bean
-    @Primary
     public RedisTemplate<String, Object> jsonRedisTemplate(
             RedisConnectionFactory redisConnectionFactory
     ) {
@@ -53,9 +49,6 @@ public class RedisConfig {
         var jacksonJsonRedisSerializer = new JacksonJsonRedisSerializer<>(Object.class);
         template.setValueSerializer(jacksonJsonRedisSerializer);
         template.setHashValueSerializer(jacksonJsonRedisSerializer);
-
-        // Enable transaction
-        template.setEnableTransactionSupport(true);
 
         template.afterPropertiesSet();
         return template;

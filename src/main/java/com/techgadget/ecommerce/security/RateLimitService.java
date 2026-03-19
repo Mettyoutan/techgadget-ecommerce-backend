@@ -1,10 +1,12 @@
 package com.techgadget.ecommerce.security;
 
 import com.techgadget.ecommerce.enums.RateLimitTier;
+import com.techgadget.ecommerce.exception.InternalServerException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.*;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 
@@ -62,6 +64,9 @@ public class RateLimitService {
         String redisKey = "rate:" + key;
         String uniqueMember = now + ":" + UUID.randomUUID();
 
+        log.debug("Check is rate limit allowed: now={}, windowStart={}, redisKey={}, maxRequests={}, ttl={}, uniqueMember={}",
+                now, windowStart, redisKey, tier.getMaxRequests(), tier.getWindowSizeSeconds() + 1, uniqueMember);
+
         // Run redis script
         Long count = stringRedisTemplate.execute(
                 SLIDING_WINDOW_SCRIPT,
@@ -73,7 +78,14 @@ public class RateLimitService {
                 uniqueMember
         );
 
-        return count != null && count < tier.getMaxRequests();
+        log.debug("Current redis count before addition: {}", count);
+
+        if (count == null) {
+            log.error("Current redis count is null. Something went wrong.");
+            throw new InternalServerException();
+        }
+
+        return count < tier.getMaxRequests();
     }
 
     /**

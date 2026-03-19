@@ -44,7 +44,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         if (!rateLimitService.isAllowed(key, tier)) {
             long retryAfter = rateLimitService.getRetryAfterSeconds(key, tier);
-            log.warn("Rate limit exceeded: key:{}, tier:{}, retryAfter:{}", key, tier, retryAfter);
+            log.warn("Rate limit exceeded: key={}, tier={}, retryAfter={}", key, tier, retryAfter);
             writeRateLimitExceededResponse(response, retryAfter);
             return;
         }
