@@ -63,7 +63,7 @@ public class OrderServiceTest {
 
     @BeforeEach
     public void setup() {
-        Category category = new Category(1L, "Electronics", "");
+        Category category = new Category("Electronics", "");
         ReflectionTestUtils.setField(category, "id", 1L);
 
         user = new User("username", "email@gmail.com", "hashed", "full name", "12345");
