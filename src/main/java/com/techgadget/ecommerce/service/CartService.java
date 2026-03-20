@@ -101,11 +101,12 @@
                 }
 
                 cartItem.setQuantity(newQuantity);
+                cartItemRepository.save(cartItem);
 
-                int index = cart.getItems().indexOf(cartItem);
-                if (index >= 0) {
-                    cart.getItems().set(index, cartItem);  // Force update reference
-                }
+//                int index = cart.getItems().indexOf(cartItem);
+//                if (index >= 0) {
+//                    cart.getItems().set(index, cartItem);  // Force update reference
+//                }
 
                 log.debug("Updated existing cart item: CartItem={}, Product={}, Quantity={} -> {}",
                         cartItem.getId(), product.getId(), oldQuantity, newQuantity);

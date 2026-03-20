@@ -39,7 +39,7 @@ public class UserProfileController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<UserProfileResponse> getUserProfile(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
