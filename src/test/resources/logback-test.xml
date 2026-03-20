@@ -10,6 +10,7 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
+    // Change LEVEL between info and debug
     <logger name="com.techgadget.ecommerce" level="DEBUG" />
 
 </configuration>
