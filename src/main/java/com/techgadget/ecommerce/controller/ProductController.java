@@ -45,7 +45,7 @@ public class ProductController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @PostMapping("/")
+    @PostMapping
     @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<ProductDetailResponse> createProduct(
             @Valid @RequestBody CreateProductRequest request

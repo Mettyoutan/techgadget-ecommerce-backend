@@ -4,6 +4,7 @@ import com.techgadget.ecommerce.dto.request.auth.LoginRequest;
 import com.techgadget.ecommerce.dto.request.auth.RegisterRequest;
 import com.techgadget.ecommerce.dto.response.auth.AuthResponse;
 import com.techgadget.ecommerce.entity.User;
+import com.techgadget.ecommerce.repository.CartRepository;
 import com.techgadget.ecommerce.repository.RefreshTokenRepository;
 import com.techgadget.ecommerce.repository.UserRepository;
 import org.junit.jupiter.api.*;
@@ -21,11 +22,15 @@ public class SecurityIntegrationTest extends BaseIntegrationTest{
     private UserRepository userRepository;
 
     @Autowired
+    private CartRepository cartRepository;
+
+    @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
     @BeforeEach
     void cleanUp() {
         refreshTokenRepository.deleteAll();
+        cartRepository.deleteAll();
         userRepository.deleteAll();
     }
 
@@ -71,6 +76,16 @@ public class SecurityIntegrationTest extends BaseIntegrationTest{
         @DisplayName("POST /auth/login - without token, returns 200")
         void login_noToken_returns200() throws Exception {
 
+            RegisterRequest registerRequest = new RegisterRequest(
+                    "username", "email@gmail.com", "password", "full name"
+            );
+
+            mockMvc.perform(post("/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(registerRequest))
+            )
+                    .andExpect(status().isCreated());
+
             LoginRequest request = new LoginRequest(
                     "email@gmail.com", "password"
             );
@@ -92,7 +107,7 @@ public class SecurityIntegrationTest extends BaseIntegrationTest{
         @DisplayName("GET /cart - without token, returns 401")
         void getCart_noToken_returns401() throws Exception {
 
-            mockMvc.perform(get("/cart/"))
+            mockMvc.perform(get("/cart"))
                     // Must be 401
                     .andExpect(status().isUnauthorized());
         }
@@ -103,7 +118,7 @@ public class SecurityIntegrationTest extends BaseIntegrationTest{
 
             String access = getAccessTokenForCustomer();
 
-            mockMvc.perform(get("/cart/")
+            mockMvc.perform(get("/cart")
                     .header("Authorization", "Bearer " + access)
             )
                     .andExpect(status().isOk());
