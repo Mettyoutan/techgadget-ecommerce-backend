@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testing Roadmap — TechGadget E-Commerce</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f5f5f0;
+    color: #1a1a18;
+    padding: 2rem 1rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #5f5e5a; margin-bottom: 1.5rem; }
+
+  .phase {
+    margin-bottom: 1rem;
+    border: 0.5px solid #d3d1c7;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .phase-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .phase-header:hover { background: #f5f5f0; }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .phase-title { font-size: 14px; font-weight: 500; flex: 1; }
+  .phase-meta { font-size: 12px; color: #5f5e5a; flex-shrink: 0; white-space: nowrap; }
+  .arrow { font-size: 11px; color: #888780; transition: transform .2s; flex-shrink: 0; }
+  .arrow.open { transform: rotate(180deg); }
+
+  .phase-body { padding: 0 16px 14px; display: none; }
+  .phase-body.open { display: block; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888780;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin: 12px 0 6px;
+  }
+
+  .item {
+    display: flex;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 0.5px solid #d3d1c7;
+    margin-bottom: 5px;
+    background: #fff;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .dot-done  { background: #639922; }
+  .dot-todo  { background: #b4b2a9; }
+  .dot-key   { background: #378ADD; }
+  .dot-warn  { background: #BA7517; }
+
+  .item-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .item-desc  { font-size: 12px; color: #5f5e5a; line-height: 1.5; }
+
+  code {
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    font-size: 11px;
+    background: #f5f5f0;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  .callout {
+    background: #dbeafe;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 12px;
+    color: #1e40af;
+    margin: 10px 0 4px;
+    line-height: 1.5;
+  }
+
+  .progress {
+    height: 4px;
+    background: #d3d1c7;
+    border-radius: 2px;
+    margin: 8px 0;
+    overflow: hidden;
+  }
+
+  .progress-fill { height: 100%; border-radius: 2px; }
+
+  /* Phase badge colors */
+  .p1-badge { background: #EAF3DE; color: #27500A; }
+  .p1-fill  { background: #639922; }
+
+  .p2-badge { background: #dbeafe; color: #1e40af; }
+  .p2-fill  { background: #378ADD; }
+
+  .p3-badge { background: #fef3c7; color: #92400e; }
+  .p3-fill  { background: #EF9F27; }
+
+  .p4-badge { background: #ede9fe; color: #4c1d95; }
+  .p4-fill  { background: #7F77DD; }
+</style>
+</head>
+<body>
+
+<h1>Testing Roadmap — TechGadget E-Commerce</h1>
+<p class="subtitle">Structured test plan from unit testing to integration testing</p>
+
+<!-- PHASE 1 -->
+<div class="phase">
+  <div class="phase-header" onclick="toggle('p1')">
+    <span class="badge p1-badge">Phase 1 — Done</span>
+    <span class="phase-title">Unit Testing — Service Layer</span>
+    <span class="phase-meta">~70 tests · sudah selesai</span>
+    <span class="arrow" id="a1">▼</span>
+  </div>
+  <div class="phase-body" id="p1">
+    <div class="progress"><div class="progress-fill p1-fill" style="width:80%"></div></div>
+    <p style="font-size:12px;color:#5f5e5a;margin:6px 0 4px">Coverage ~80% pada service layer utama</p>
+
+    <div class="section-label">Sudah selesai</div>
+    <div class="item"><div class="dot dot-done"></div><div><div class="item-title">AuthServiceTest</div><div class="item-desc">register, login, refresh, logout — semua skenario happy &amp; error path</div></div></div>
+    <div class="item"><div class="dot dot-done"></div><div><div class="item-title">ProductServiceTest</div><div class="item-desc">getById, createProduct, searchProducts — 8 kombinasi branching price filter</div></div></div>
+    <div class="item"><div class="dot dot-done"></div><div><div class="item-title">CartServiceTest</div><div class="item-desc">addToCart (new/existing item), updateCartItem, removeCartItem, clearCart</div></div></div>
+    <div class="item"><div class="dot dot-done"></div><div><div class="item-title">OrderServiceTest</div><div class="item-desc">createOrder, cancelOrder, getUserOrders, admin status transitions</div></div></div>
+
+    <div class="section-label">Opsional — low priority</div>
+    <div class="item"><div class="dot dot-warn"></div><div><div class="item-title">RateLimitServiceTest</div><div class="item-desc">isAllowed boundary condition, Lua script args, Redis null fallback. Berguna tapi bukan prioritas — logika sudah terbukti dari production.</div></div></div>
+    <div class="item"><div class="dot dot-warn"></div><div><div class="item-title">JwtTokenProviderTest</div><div class="item-desc">generateAccessToken claims, validateToken expired/tampered. Simpel tapi value rendah — library JJWT sudah ter-test dengan baik.</div></div></div>
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div class="phase">
+  <div class="phase-header" onclick="toggle('p2')">
+    <span class="badge p2-badge">Phase 2 — Prioritas Utama</span>
+    <span class="phase-title">Integration Testing — Auth &amp; Security</span>
+    <span class="phase-meta">~8 tests · mulai di sini</span>
+    <span class="arrow open" id="a2">▼</span>
+  </div>
+  <div class="phase-body open" id="p2">
+    <div class="progress"><div class="progress-fill p2-fill" style="width:0%"></div></div>
+    <div class="callout">Setup sekali: Testcontainers (PostgreSQL + Redis) + MockMvc. Semua test berikutnya pakai fondasi yang sama.</div>
+
+    <div class="section-label">Setup — lakukan sekali</div>
+    <div class="item"><div class="dot dot-key"></div><div><div class="item-title">BaseIntegrationTest.java</div><div class="item-desc">Abstract class dengan <code>@SpringBootTest</code>, Testcontainers PostgreSQL + Redis, <code>@Transactional</code> untuk isolasi data antar test</div></div></div>
+
+    <div class="section-label">Auth flow — paling kritis</div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">POST /auth/register → 201</div><div class="item-desc">User baru terdaftar, token dikembalikan, refresh token tersimpan di DB</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">POST /auth/login → 200</div><div class="item-desc">Login berhasil, access token valid, HttpOnly cookie set</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">POST /auth/register duplikat → 409</div><div class="item-desc">Email yang sudah ada melempar ConflictException dengan format ErrorResponse yang benar</div></div></div>
+
+    <div class="section-label">Security config — hal yang unit test tidak bisa verifikasi</div>
+    <div class="item"><div class="dot dot-key"></div><div><div class="item-title">GET /products — tanpa token → 200</div><div class="item-desc">Public endpoint bisa diakses tanpa JWT. Verifikasi SecurityConfig benar.</div></div></div>
+    <div class="item"><div class="dot dot-key"></div><div><div class="item-title">GET /cart — tanpa token → 401</div><div class="item-desc">Protected endpoint ditolak tanpa JWT. AppAuthenticationEntryPoint bekerja.</div></div></div>
+    <div class="item"><div class="dot dot-key"></div><div><div class="item-title">GET /cart — dengan token valid → 200</div><div class="item-desc">JWT filter bekerja end-to-end: parse token → load user → authorize</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">POST /admin/... — sebagai CUSTOMER → 403</div><div class="item-desc">Role-based access control bekerja. AccessDeniedHandler mengembalikan format yang benar.</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">POST /auth/login 11x → 429</div><div class="item-desc">Rate limiter benar-benar bekerja di skenario nyata dengan Redis. Verifikasi header Retry-After.</div></div></div>
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="phase">
+  <div class="phase-header" onclick="toggle('p3')">
+    <span class="badge p3-badge">Phase 3</span>
+    <span class="phase-title">Integration Testing — Core Business Flow</span>
+    <span class="phase-meta">~6 tests</span>
+    <span class="arrow" id="a3">▼</span>
+  </div>
+  <div class="phase-body" id="p3">
+    <div class="progress"><div class="progress-fill p3-fill" style="width:0%"></div></div>
+    <div class="callout">Test end-to-end flow yang mencerminkan use case nyata user. Setiap test mensimulasikan journey satu user dari awal sampai akhir.</div>
+
+    <div class="section-label">Happy path flows</div>
+    <div class="item"><div class="dot dot-key"></div><div><div class="item-title">Full order flow</div><div class="item-desc">Register → Login → POST /cart → POST /orders → GET /orders/{id}. Verifikasi stock berkurang, snapshot tersimpan, response correct.</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">Cancel order → stock restored</div><div class="item-desc">Buat order → cancel → verifikasi stock product kembali ke jumlah semula di DB nyata</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">Product search dengan filter</div><div class="item-desc">GET /products/search?categoryId=1&amp;minPrice=0&amp;maxPrice=20000000 — verifikasi query JPQL benar</div></div></div>
+
+    <div class="section-label">Error path yang penting</div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">Checkout dengan stock habis → 409</div><div class="item-desc">Product stock = 0 saat checkout, ConflictException dengan format ErrorResponse benar</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">Order milik user lain → 404</div><div class="item-desc">GET /orders/{id} dengan id order milik user lain. Ownership check bekerja di DB nyata.</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">Request body tidak valid → 400</div><div class="item-desc"><code>POST /orders</code> dengan cartItemIds null → 400 dengan validation error message dari <code>@Valid</code></div></div></div>
+  </div>
+</div>
+
+<!-- PHASE 4 -->
+<div class="phase">
+  <div class="phase-header" onclick="toggle('p4')">
+    <span class="badge p4-badge">Phase 4 — Future</span>
+    <span class="phase-title">Unit Test Sisa + Integration Lanjutan</span>
+    <span class="phase-meta">setelah Phase 2 &amp; 3 selesai</span>
+    <span class="arrow" id="a4">▼</span>
+  </div>
+  <div class="phase-body" id="p4">
+    <div class="progress"><div class="progress-fill p4-fill" style="width:0%"></div></div>
+
+    <div class="section-label">Unit test yang masih opsional</div>
+    <div class="item"><div class="dot dot-warn"></div><div><div class="item-title">PaymentServiceTest</div><div class="item-desc">Baru relevan setelah integrasi Stripe. Dummy payment tidak butuh test yang kompleks.</div></div></div>
+    <div class="item"><div class="dot dot-warn"></div><div><div class="item-title">ProductReviewServiceTest</div><div class="item-desc">Logic sederhana, bisa ditambahkan tapi bukan prioritas untuk MVP.</div></div></div>
+
+    <div class="section-label">Integration test lanjutan</div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">Refresh token rotation flow</div><div class="item-desc">Login → ambil refresh token → refresh → verifikasi token lama invalid, token baru valid di DB</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">Image upload flow</div><div class="item-desc">POST /products/{id}/images dengan MockMultipartFile → verifikasi MinIO dan thumbnail</div></div></div>
+    <div class="item"><div class="dot dot-todo"></div><div><div class="item-title">Admin order management flow</div><div class="item-desc">PENDING → CONFIRMED → SHIPPED → COMPLETED via admin endpoints</div></div></div>
+  </div>
+</div>
+
+<script>
+function toggle(id) {
+  const body = document.getElementById(id);
+  const arrow = document.getElementById('a' + id.slice(1));
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  arrow.classList.toggle('open', !isOpen);
+}
+</script>
+</body>
+</html>

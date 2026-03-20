@@ -180,14 +180,14 @@ public class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("email not found - throws NotFoundException")
-        void emailNotFound_throwsNotFoundException() {
+        @DisplayName("email not found - throws UnauthorizedException")
+        void emailNotFound_throwsUnathorizedException() {
 
             when(userRepository.findByEmail("email@gmail.com"))
                     .thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> authService.login(request))
-                    .isInstanceOf(NotFoundException.class)
+                    .isInstanceOf(UnauthorizedException.class)
                     .hasMessageContaining("Invalid username or password.");
         }
 

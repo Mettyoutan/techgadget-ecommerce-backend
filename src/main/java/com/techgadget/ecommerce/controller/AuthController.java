@@ -76,7 +76,8 @@ public class AuthController {
         // Add refresh to http cookie
         addRefreshToCookie(authServiceResponse.getRefresh(), response);
 
-        return ResponseEntity.ok(mapToAuthResponse(authServiceResponse));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mapToAuthResponse(authServiceResponse));
     }
 
     /**
@@ -120,8 +121,7 @@ public class AuthController {
         // Add refresh to http cookie
         addRefreshToCookie(authServiceResponse.getRefresh(), response);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(mapToAuthResponse(authServiceResponse));
+        return ResponseEntity.ok(mapToAuthResponse(authServiceResponse));
     }
 
     /**

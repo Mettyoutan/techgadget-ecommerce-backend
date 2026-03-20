@@ -94,7 +94,7 @@ public class AuthService {
         // If user not found
         if (user == null) {
             log.warn("Login failed - email not found: email={}", request.getEmail());
-            throw new NotFoundException("Invalid username or password.");
+            throw new UnauthorizedException("Invalid username or password.");
         }
 
         // Check password
@@ -106,7 +106,7 @@ public class AuthService {
         // (For Safety) Revoke all active refresh token from user
         refreshTokenRepository.revokeAllUnrevokedByUser_Id(user.getId());
 
-        // TODO:
+        // TODO: Create multi device refresh token
 //        // Make sure user doesn't have any active refresh token
 //        boolean isActiveRefreshExists = refreshTokenRepository
 //                .existsByUser_IdAndRevokedIsFalse(user.getId()); // Check if user has any active refresh token
