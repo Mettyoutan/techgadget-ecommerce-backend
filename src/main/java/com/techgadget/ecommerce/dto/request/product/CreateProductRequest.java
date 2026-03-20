@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Data
@@ -31,5 +32,5 @@ public class CreateProductRequest {
     @Min(value = 0, message = "Stock cannot be negative.")
     private Integer stock;
 
-    private Map<String, Object> specs;
+    private Map<String, Object> specs = new HashMap<>();
 }

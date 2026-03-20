@@ -28,8 +28,7 @@ public class Category extends Auditable {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    public Category(Long id, String name, @Nullable String description) {
-        this.id = id;
+    public Category(String name, @Nullable String description) {
         this.name = name;
         this.description = description;
     }
