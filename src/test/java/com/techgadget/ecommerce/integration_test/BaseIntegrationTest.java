@@ -1,6 +1,7 @@
 package com.techgadget.ecommerce.integration_test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.techgadget.ecommerce.repository.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,14 +62,44 @@ public abstract class BaseIntegrationTest {
     @Autowired
     protected ObjectMapper objectMapper;
 
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
+    /*
+     * Repositories
+     */
+    @Autowired private ProductReviewRepository productReviewRepository;
+    @Autowired private CartItemRepository cartItemRepository;
+    @Autowired private PaymentRepository paymentRepository;
+    @Autowired private OrderRepository orderRepository;
+    @Autowired private CartRepository cartRepository;
+    @Autowired private AddressRepository addressRepository;
+    @Autowired private RefreshTokenRepository refreshTokenRepository;
+    @Autowired private ProductImageRepository productImageRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private ProductRepository productRepository;
+    @Autowired private CategoryRepository categoryRepository;
+    @Autowired private StringRedisTemplate stringRedisTemplate;
 
     /**
-     * Flush all data in Redis
+     * Full cleanup before each test (repositories & redis)
+     *
+     * Delete order matters
      */
     @BeforeEach
-    void cleanUpRedis() {
+    void cleanUpAll() {
+
+        productReviewRepository.deleteAll();
+        paymentRepository.deleteAll();
+        cartItemRepository.deleteAll();
+
+        orderRepository.deleteAll();
+        cartRepository.deleteAll();
+        productImageRepository.deleteAll();
+
+        addressRepository.deleteAll();
+        refreshTokenRepository.deleteAll();
+        productRepository.deleteAll();
+
+        userRepository.deleteAll();
+        categoryRepository.deleteAll();
 
         Assertions.assertNotNull(stringRedisTemplate.getConnectionFactory());
         stringRedisTemplate.getConnectionFactory()

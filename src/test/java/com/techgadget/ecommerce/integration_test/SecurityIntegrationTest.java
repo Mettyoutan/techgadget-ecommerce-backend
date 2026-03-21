@@ -23,29 +23,8 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("Security Integration Test")
 public class SecurityIntegrationTest extends BaseIntegrationTest{
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private CartRepository cartRepository;
-
-    @Autowired
-    private RefreshTokenRepository refreshTokenRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private CategoryRepository categoryRepository;
-
-    @BeforeEach
-    void cleanUp() {
-        productRepository.deleteAll();
-        categoryRepository.deleteAll();
-        refreshTokenRepository.deleteAll();
-        cartRepository.deleteAll();
-        userRepository.deleteAll();
-    }
+    @Autowired private UserRepository userRepository;
+    @Autowired private CategoryRepository categoryRepository;
 
     /**
      * Helper method to get customer access token
