@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.util.Set;
 
-@Getter
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class UserProfileResponse {
 
