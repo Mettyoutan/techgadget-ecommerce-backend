@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
-@Getter
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class ProductDetailResponse {
 

@@ -7,7 +7,9 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class OrderResponse {
 
