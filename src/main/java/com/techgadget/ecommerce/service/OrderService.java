@@ -516,6 +516,12 @@ public class OrderService {
                     return new NotFoundException("Order not found.");
                 });
 
+        // Payment must be PAID too
+        if (!order.getPayment().getPaymentStatus().equals(PaymentStatus.PAID)) {
+            log.warn("Order {} has not been paid, so can't be confirmed", orderId);
+            throw new ConflictException("Cannot confirm order that has not been paid.");
+        }
+
         OrderStatus current = order.getOrderStatus();
 
         if (!current.canTransitionTo(target)) {
@@ -592,12 +598,6 @@ public class OrderService {
                     log.warn("Order not found with id = {}", orderId);
                     return new NotFoundException("Order not found.");
                 });
-
-        // Payment must be PAID too
-        if (!order.getPayment().getPaymentStatus().equals(PaymentStatus.PAID)) {
-            log.warn("Order {} has not been paid, so can't be confirmed", orderId);
-            throw new ConflictException("Cannot confirm order that has not been paid.");
-        }
 
         // Check if the current order status can be transitioned
         OrderStatus current = order.getOrderStatus();

@@ -57,9 +57,6 @@ public class OrderServiceTest {
     private Product product;
     private Cart cart;
     private CartItem cartItem;
-    private Order pendingOrder;
-    private OrderItem orderItem;
-    private Payment pendingPayment;
 
     @BeforeEach
     public void setup() {
@@ -93,12 +90,15 @@ public class OrderServiceTest {
 
         // Add 1 item to cart
         cart.addItem(cartItem);
+    }
+
+    private Order createPendingOrder() {
 
         // Create pending order with 1 orderItem
-        pendingOrder = new Order(user, "ORD-1", shippingAddress);
+        Order pendingOrder = new Order(user, "ORD-1", shippingAddress);
         ReflectionTestUtils.setField(pendingOrder, "id", 1L);
 
-        orderItem = new OrderItem(
+        OrderItem orderItem = new OrderItem(
                 pendingOrder,
                 1L,
                 "Iphone 14",
@@ -111,7 +111,7 @@ public class OrderServiceTest {
         pendingOrder.addItem(orderItem);
 
         // Add pending payment to order
-        pendingPayment = new Payment(
+        Payment pendingPayment = new Payment(
                 pendingOrder,
                 15_000_000L,
                 PaymentStatus.PENDING,
@@ -121,6 +121,80 @@ public class OrderServiceTest {
         ReflectionTestUtils.setField(pendingPayment, "id", 1L);
 
         pendingOrder.setPayment(pendingPayment);
+
+        return pendingOrder;
+    }
+
+    private Order createPaidOrder() {
+
+        // Create paid order with 1 orderItem
+        Order paidOrder = new Order(user, "ORD-1", shippingAddress);
+        ReflectionTestUtils.setField(paidOrder, "id", 1L);
+
+        OrderItem orderItem = new OrderItem(
+                paidOrder,
+                1L,
+                "Iphone 14",
+                null,
+                2,
+                15_000_000L
+        );
+        ReflectionTestUtils.setField(orderItem, "id", 1L);
+
+        paidOrder.addItem(orderItem);
+
+        // Set order status into PAID
+        paidOrder.setOrderStatus(OrderStatus.PAID);
+
+        // Add PAID payment to order
+        Payment pendingPayment = new Payment(
+                paidOrder,
+                15_000_000L,
+                PaymentStatus.PAID, // PAID
+                PaymentMethod.DUMMY,
+                null
+        );
+        ReflectionTestUtils.setField(pendingPayment, "id", 1L);
+
+        paidOrder.setPayment(pendingPayment);
+
+        return paidOrder;
+    }
+
+    private Order createConfirmedOrder() {
+
+        // Create confirmed order with 1 item
+        Order confirmedOrder = new Order(user, "ORD-1", shippingAddress);
+        ReflectionTestUtils.setField(confirmedOrder, "id", 1L);
+
+        OrderItem orderItem = new OrderItem(
+                confirmedOrder,
+                1L,
+                "Iphone 14",
+                null,
+                2,
+                15_000_000L
+        );
+        ReflectionTestUtils.setField(orderItem, "id", 1L);
+
+        confirmedOrder.addItem(orderItem);
+
+        // Set order status into CONFIRMED
+        confirmedOrder.setOrderStatus(OrderStatus.CONFIRMED);
+
+        // Add PAID payment to order
+        Payment pendingPayment = new Payment(
+                confirmedOrder,
+                15_000_000L,
+                PaymentStatus.PAID, // PAID
+                PaymentMethod.DUMMY,
+                null
+        );
+        ReflectionTestUtils.setField(pendingPayment, "id", 1L);
+
+        confirmedOrder.setPayment(pendingPayment);
+
+        return confirmedOrder;
     }
 
     @Nested
@@ -138,6 +212,9 @@ public class OrderServiceTest {
         void success_orderCreatedWithSnapshotData() {
 
             CreateOrderRequest request = buildCreateOrderRequest(List.of(1L));
+
+            Order pendingOrder = createPendingOrder();
+            Payment pendingPayment = pendingOrder.getPayment();
 
             when(userRepository.findById(1L)).thenReturn(Optional.of(user));
             when(cartRepository.findByUser_IdWithItems(1L)).thenReturn(Optional.of(cart));
@@ -258,6 +335,8 @@ public class OrderServiceTest {
         @DisplayName("success - order cancelled and stock restored")
         void success_orderCancelledAndStockRestored() {
 
+            Order pendingOrder = createPendingOrder();
+
             // Product stock after order is 3, when cancelled, stock restored to 5
             product.setStock(3);
 
@@ -294,6 +373,8 @@ public class OrderServiceTest {
         @DisplayName("order status is not PENDING - throws ConflictException")
         void orderStatusNotPending_throwsConflictException() {
 
+            Order pendingOrder = createPendingOrder();
+
             // Order is already CONFIRMED — cannot be cancelled via customer endpoint
             pendingOrder.setOrderStatus(OrderStatus.CONFIRMED);
 
@@ -310,6 +391,8 @@ public class OrderServiceTest {
         @Test
         @DisplayName("product id snapshot not found in DB - throws NotFoundException")
         void productIdSnapshotNotFound_throwsNotFoundException() {
+
+            Order pendingOrder = createPendingOrder();
 
             // Order item references product id 10, which no longer exists in DB
             pendingOrder.getItems().getFirst().setProductIdSnapshot(10L);
@@ -352,6 +435,8 @@ public class OrderServiceTest {
         @DisplayName("no filter - calls findUserOrders with null status")
         void noFilter_callsFindUserOrders() {
 
+            Order pendingOrder = createPendingOrder();
+
             OrderFilterRequest filter = buildFilter(null);
             Page<Order> page = new PageImpl<>(List.of(pendingOrder));
 
@@ -371,6 +456,8 @@ public class OrderServiceTest {
         @DisplayName("with valid status - passes parsed OrderStatus to repository")
         void withValidStatus_passesOrderStatusToRepository() {
 
+            Order pendingOrder = createPendingOrder();
+
             OrderFilterRequest filter = buildFilter("PENDING");
             Page<Order> page = new PageImpl<>(List.of(pendingOrder));
 
@@ -387,6 +474,8 @@ public class OrderServiceTest {
         @Test
         @DisplayName("with fromDate only - calls findUserOrdersFromDate")
         void withFromDateOnly_callsFromDateRepository() {
+
+            Order pendingOrder = createPendingOrder();
 
             OrderFilterRequest filter = buildFilter(null);
             filter.setFromDate(LocalDate.of(2025, 1, 1));
@@ -407,6 +496,8 @@ public class OrderServiceTest {
         @DisplayName("with toDate only - calls findUserOrdersToDate")
         void withToDateOnly_callsToDateRepository() {
 
+            Order pendingOrder = createPendingOrder();
+
             OrderFilterRequest filter = buildFilter(null);
             filter.setToDate(LocalDate.of(2025, 12, 31));
             Page<Order> page = new PageImpl<>(List.of(pendingOrder));
@@ -426,6 +517,8 @@ public class OrderServiceTest {
         @DisplayName("with fromDate and toDate - calls findUserOrdersBetweenDate")
         void withBothDates_callsBetweenDateRepository() {
 
+            Order pendingOrder = createPendingOrder();
+
             OrderFilterRequest filter = buildFilter(null);
             filter.setFromDate(LocalDate.of(2025, 1, 1));
             filter.setToDate(LocalDate.of(2025, 12, 31));
@@ -444,35 +537,73 @@ public class OrderServiceTest {
     }
 
     @Nested
-    @DisplayName("adminUpdateOrderStatusToShip()")
-    class AdminUpdateOrderStatusToShip {
+    @DisplayName("adminUpdateOrderStatusToConfirmed()")
+    class AdminUpdateOrderToConfirmed {
+
+        @Test
+        @DisplayName("success - PAID order to CONFIRMED")
+        void success_paidOrderToConfirmed() {
+
+            // Order already PAID
+            Order paidOrder = createPaidOrder();
+
+            when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
+                    .thenReturn(Optional.of(paidOrder));
+
+            OrderResponse response = orderService.adminUpdateOrderStatusToConfirmed(1L);
+
+            assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.CONFIRMED.toString());
+            assertThat(response.getPaymentStatus()).isEqualTo(PaymentStatus.PAID.toString());
+        }
+
+        @Test
+        @DisplayName("invalid transition - PENDING order to CONFIRMED, throws ConflictException")
+        void invalidTransition_throwsConflictException() {
+
+            Order pendingOrder = createPendingOrder();
+
+            when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
+                    .thenReturn(Optional.of(pendingOrder));
+
+            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToConfirmed(1L))
+                    .isInstanceOf(ConflictException.class);
+
+            verify(orderRepository, never()).save(any(Order.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("adminUpdateOrderStatusToShipped()")
+    class AdminUpdateOrderStatusToShipped {
 
         private UpdateOrderStatusToShipRequest buildShipRequest() {
             return new UpdateOrderStatusToShipRequest("JNE", "JNE123456");
         }
 
         @Test
-        @DisplayName("success - CONFIRMED order shipped with tracking info")
-        void success_confirmedOrderShipped() {
+        @DisplayName("success - CONFIRMED order to SHIPPED with tracking info")
+        void success_confirmedOrderToShipped() {
 
-            pendingOrder.setOrderStatus(OrderStatus.CONFIRMED);
+            Order confirmedOrder = createConfirmedOrder();
 
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
-                    .thenReturn(Optional.of(pendingOrder));
+                    .thenReturn(Optional.of(confirmedOrder));
 
             OrderResponse response = orderService.adminUpdateOrderStatusToShipped(1L, buildShipRequest());
 
             assertThat(response).isNotNull();
-            assertThat(pendingOrder.getOrderStatus()).isEqualTo(OrderStatus.SHIPPED);
-            assertThat(pendingOrder.getShippingProvider()).isEqualTo("JNE");
-            assertThat(pendingOrder.getTrackingNumber()).isEqualTo("JNE123456");
+            assertThat(confirmedOrder.getOrderStatus()).isEqualTo(OrderStatus.SHIPPED);
+            assertThat(confirmedOrder.getShippingProvider()).isEqualTo("JNE");
+            assertThat(confirmedOrder.getTrackingNumber()).isEqualTo("JNE123456");
 
-            verify(orderRepository, times(1)).save(pendingOrder);
+            verify(orderRepository, times(1)).save(confirmedOrder);
         }
 
         @Test
-        @DisplayName("invalid transition - PENDING cannot transition to SHIPPED")
+        @DisplayName("invalid transition - PENDING cannot transition to SHIPPED, throws ConflictException")
         void invalidTransition_throwsConflictException() {
+
+            Order pendingOrder = createPendingOrder();
 
             // PENDING → SHIPPED is not a valid transition
             assertThat(pendingOrder.getOrderStatus()).isEqualTo(OrderStatus.PENDING);
@@ -501,32 +632,35 @@ public class OrderServiceTest {
     }
 
     @Nested
-    @DisplayName("adminUpdateOrderStatusToComplete()")
-    class AdminUpdateOrderStatusToComplete {
+    @DisplayName("adminUpdateOrderStatusToCompleted()")
+    class AdminUpdateOrderStatusToCompleted {
 
         @Test
         @DisplayName("success - SHIPPED order completed")
-        void success_shippedOrderCompleted() {
+        void success_shippedOrderToCompleted() {
 
-            pendingOrder.setOrderStatus(OrderStatus.SHIPPED);
+            Order paidOrder = createPendingOrder();
+            paidOrder.setOrderStatus(OrderStatus.SHIPPED);
 
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
-                    .thenReturn(Optional.of(pendingOrder));
+                    .thenReturn(Optional.of(paidOrder));
 
             orderService.adminUpdateOrderStatusToCompleted(1L);
 
-            assertThat(pendingOrder.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
-            verify(orderRepository, times(1)).save(pendingOrder);
+            assertThat(paidOrder.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
+            verify(orderRepository, times(1)).save(paidOrder);
         }
 
         @Test
         @DisplayName("invalid transition - COMPLETED cannot transition further")
         void invalidTransition_throwsConflictException() {
 
-            pendingOrder.setOrderStatus(OrderStatus.COMPLETED);
+            Order completedOrder = createConfirmedOrder();
+
+            completedOrder.setOrderStatus(OrderStatus.COMPLETED);
 
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
-                    .thenReturn(Optional.of(pendingOrder));
+                    .thenReturn(Optional.of(completedOrder));
 
             assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToCompleted(1L))
                     .isInstanceOf(ConflictException.class);
@@ -536,32 +670,33 @@ public class OrderServiceTest {
     }
 
     @Nested
-    @DisplayName("adminUpdateOrderStatusToCancel()")
-    class AdminUpdateOrderStatusToCancel {
+    @DisplayName("adminUpdateOrderStatusToCancelled()")
+    class AdminUpdateOrderStatusToCancelled {
 
         @Test
         @DisplayName("success - CONFIRMED order cancelled by admin")
-        void success_confirmedOrderCancelled() {
+        void success_confirmedOrderToCancelled() {
 
-            pendingOrder.setOrderStatus(OrderStatus.CONFIRMED);
+            Order confirmedOrder = createConfirmedOrder();
 
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
-                    .thenReturn(Optional.of(pendingOrder));
+                    .thenReturn(Optional.of(confirmedOrder));
 
             orderService.adminUpdateOrderStatusToCancelled(1L);
 
-            assertThat(pendingOrder.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
-            verify(orderRepository, times(1)).save(pendingOrder);
+            assertThat(confirmedOrder.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
+            verify(orderRepository, times(1)).save(confirmedOrder);
         }
 
         @Test
         @DisplayName("invalid transition - CANCELLED cannot transition further")
         void invalidTransition_throwsConflictException() {
 
-            pendingOrder.setOrderStatus(OrderStatus.CANCELLED);
+            Order cancelledOrder = createConfirmedOrder();
+            cancelledOrder.setOrderStatus(OrderStatus.CANCELLED);
 
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
-                    .thenReturn(Optional.of(pendingOrder));
+                    .thenReturn(Optional.of(cancelledOrder));
 
             assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToCancelled(1L))
                     .isInstanceOf(ConflictException.class);
