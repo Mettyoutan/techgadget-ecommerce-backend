@@ -27,7 +27,8 @@ public class OrderResponse {
 
     private List<OrderItemResponse> items;
 
-    @Getter
+    @Data
+    @NoArgsConstructor
     @AllArgsConstructor
     public static class OrderItemResponse {
     

@@ -500,16 +500,51 @@ public class OrderService {
     }
 
     /**
-     * Update order status to ship
+     * Update order status into confirmed
      */
     @Transactional
-    public OrderResponse adminUpdateOrderStatusToShip(Long orderId, UpdateOrderStatusToShipRequest request) {
+    public OrderResponse adminUpdateOrderStatusToConfirmed(Long orderId) {
 
-        log.debug("Processing admin update order status to ship - " +
+        log.debug("Processing admin update order status to confirmed - Order: {}", orderId);
+
+        OrderStatus target = OrderStatus.CONFIRMED;
+
+        Order order = orderRepository
+                .findOrderByIdWithRelationForAdmin(orderId)
+                .orElseThrow(() -> {
+                    log.warn("Order {} not found", orderId);
+                    return new NotFoundException("Order not found.");
+                });
+
+        OrderStatus current = order.getOrderStatus();
+
+        if (!current.canTransitionTo(target)) {
+            log.warn("Invalid status transition from {} to {} for order id = {}",
+                    target, current, orderId);
+            throw new ConflictException("Cannot change order status from " +
+                    current + " to " + target);
+        }
+
+        order.setOrderStatus(target);
+        orderRepository.save(order);
+
+        log.info("Admin successfully updated order status from {} to {}: Order={}",
+                current, target, orderId);
+
+        return mapToOrderResponse(order);
+    }
+
+    /**
+     * Update order status into shipped
+     */
+    @Transactional
+    public OrderResponse adminUpdateOrderStatusToShipped(Long orderId, UpdateOrderStatusToShipRequest request) {
+
+        log.debug("Processing admin update order status to shipped - " +
                 "Order: {}, ShippingProvider: {}, TrackingNumber: {}",
                 orderId, request.getShippingProvider(), request.getTrackingNumber());
 
-        OrderStatus targetStatus = OrderStatus.SHIPPED;
+        OrderStatus target = OrderStatus.SHIPPED;
 
         Order order = orderRepository
                 .findOrderByIdWithRelationForAdmin(orderId)
@@ -519,37 +554,37 @@ public class OrderService {
                 });
 
         // Check if the current order status can be transitioned
-        OrderStatus currentStatus = order.getOrderStatus();
+        OrderStatus current = order.getOrderStatus();
 
-        if (!currentStatus.canTransitionTo(targetStatus)) {
+        if (!current.canTransitionTo(target)) {
             log.warn("Invalid status transition from {} to {} for order id = {}",
-                    targetStatus, currentStatus, orderId);
+                    target, current, orderId);
             throw new ConflictException("Cannot change order status from " +
-                    currentStatus + " to " + targetStatus);
+                    current + " to " + target);
         }
 
         // Set order status & add some shipping order information
-        order.setOrderStatus(targetStatus);
+        order.setOrderStatus(target);
         order.setShippingProvider(request.getShippingProvider());
         order.setTrackingNumber(request.getTrackingNumber());
 
         orderRepository.save(order);
 
         log.info("Admin successfully updated order status from {} to {} - Order: {}",
-                currentStatus, targetStatus, orderId);
+                current, target, orderId);
 
         return mapToOrderResponse(order);
     }
 
     /**
-     * Update order status to complete
+     * Update order status into completed
      */
     @Transactional
-    public OrderResponse adminUpdateOrderStatusToComplete(Long orderId) {
+    public OrderResponse adminUpdateOrderStatusToCompleted(Long orderId) {
 
         log.debug("Processing admin update order status to complete - Order: {}", orderId);
 
-        OrderStatus targetStatus = OrderStatus.COMPLETED;
+        OrderStatus target = OrderStatus.COMPLETED;
 
         Order order = orderRepository
                 .findOrderByIdWithRelationForAdmin(orderId)
@@ -558,31 +593,37 @@ public class OrderService {
                     return new NotFoundException("Order not found.");
                 });
 
-        // Check if the current order status can be transitioned
-        OrderStatus currentStatus = order.getOrderStatus();
-
-        if (!currentStatus.canTransitionTo(targetStatus)) {
-            log.warn("Invalid status transition from {} to {} for order id = {}",
-                    targetStatus, currentStatus, orderId);
-            throw new ConflictException("Cannot change order status from " +
-                    currentStatus + " to " + targetStatus);
+        // Payment must be PAID too
+        if (!order.getPayment().getPaymentStatus().equals(PaymentStatus.PAID)) {
+            log.warn("Order {} has not been paid, so can't be confirmed", orderId);
+            throw new ConflictException("Cannot confirm order that has not been paid.");
         }
 
-        order.setOrderStatus(targetStatus);
+        // Check if the current order status can be transitioned
+        OrderStatus current = order.getOrderStatus();
+
+        if (!current.canTransitionTo(target)) {
+            log.warn("Invalid status transition from {} to {} for order id = {}",
+                    target, current, orderId);
+            throw new ConflictException("Cannot change order status from " +
+                    current + " to " + target);
+        }
+
+        order.setOrderStatus(target);
         orderRepository.save(order);
 
         log.info("Admin successfully updated order status from {} to {} - Order: {}",
-                currentStatus, targetStatus, orderId);
+                current, target, orderId);
 
         return mapToOrderResponse(order);
     }
 
     @Transactional
-    public OrderResponse adminUpdateOrderStatusToCancel(Long orderId) {
+    public OrderResponse adminUpdateOrderStatusToCancelled(Long orderId) {
 
         log.debug("Processing admin update order status to cancel - Order: {}", orderId);
 
-        OrderStatus targetStatus = OrderStatus.CANCELLED;
+        OrderStatus target = OrderStatus.CANCELLED;
 
         Order order = orderRepository
                 .findOrderByIdWithRelationForAdmin(orderId)
@@ -592,20 +633,20 @@ public class OrderService {
                 });
 
         // Check if the current order status can be transitioned
-        OrderStatus currentStatus = order.getOrderStatus();
+        OrderStatus current = order.getOrderStatus();
 
-        if (!currentStatus.canTransitionTo(targetStatus)) {
+        if (!current.canTransitionTo(target)) {
             log.warn("Invalid status transition from {} to {} for order id = {}",
-                    targetStatus, currentStatus, orderId);
+                    target, current, orderId);
             throw new ConflictException("Cannot change order status from " +
-                    currentStatus + " to " + targetStatus);
+                    current + " to " + target);
         }
 
-        order.setOrderStatus(targetStatus);
+        order.setOrderStatus(target);
         orderRepository.save(order);
 
         log.info("Admin successfully updated order status from {} to {} - Order: {}",
-                currentStatus, targetStatus, orderId);
+                current, target, orderId);
 
         return mapToOrderResponse(order);
     }

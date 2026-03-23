@@ -109,10 +109,37 @@ public class AdminOrderController {
     }
 
     /**
+     * Update order status to confirmed
+     */
+    @Operation(
+            summary = "Admin update order status to confirmed",
+            description = ""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order status is updated"),
+            @ApiResponse(
+                    responseCode = "4**",
+                    description = "Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponse.class)
+                    )),
+    })
+    @PatchMapping("/{orderId}/confirm")
+    public ResponseEntity<OrderResponse> updateOrderStatusToConfirmed(
+            @PathVariable Long orderId
+    ) {
+
+        OrderResponse response = orderService
+                .adminUpdateOrderStatusToConfirmed(orderId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Update order status to ship
      */
     @Operation(
-            summary = "Admin update order status to ship",
+            summary = "Admin update order status to shipped",
             description = ""
     )
     @ApiResponses({
@@ -125,13 +152,13 @@ public class AdminOrderController {
                     )),
     })
     @PatchMapping("/{orderId}/ship")
-    public ResponseEntity<OrderResponse> updateOrderStatusToShip(
+    public ResponseEntity<OrderResponse> updateOrderStatusToShipped(
             @PathVariable Long orderId,
             @Valid @RequestBody UpdateOrderStatusToShipRequest request
     ) {
 
         OrderResponse response = orderService
-                .adminUpdateOrderStatusToShip(orderId, request);
+                .adminUpdateOrderStatusToShipped(orderId, request);
 
         return ResponseEntity.ok(response);
     }
@@ -140,7 +167,7 @@ public class AdminOrderController {
      * Update order status to complete
      */
     @Operation(
-            summary = "Admin update order status to complete",
+            summary = "Admin update order status to completed",
             description = ""
     )
     @ApiResponses({
@@ -153,12 +180,12 @@ public class AdminOrderController {
                     )),
     })
     @PatchMapping("/{orderId}/complete")
-    public ResponseEntity<OrderResponse> updateOrderStatusToComplete(
+    public ResponseEntity<OrderResponse> updateOrderStatusToCompleted(
             @PathVariable Long orderId
     ) {
 
         OrderResponse response = orderService
-                .adminUpdateOrderStatusToComplete(orderId);
+                .adminUpdateOrderStatusToCompleted(orderId);
 
         return ResponseEntity.ok(response);
     }
@@ -169,7 +196,7 @@ public class AdminOrderController {
      * Update order status to cancel
      */
     @Operation(
-            summary = "Update order status to cancel",
+            summary = "Update order status to cancelled",
             description = ""
     )
     @ApiResponses({
@@ -182,12 +209,12 @@ public class AdminOrderController {
                     )),
     })
     @PatchMapping("/{orderId}/cancel")
-    public ResponseEntity<OrderResponse> updateOrderStatusToCancel(
+    public ResponseEntity<OrderResponse> updateOrderStatusToCancelled(
             @PathVariable Long orderId
     ) {
 
         OrderResponse response = orderService
-                .adminUpdateOrderStatusToCancel(orderId);
+                .adminUpdateOrderStatusToCancelled(orderId);
 
         return ResponseEntity.ok(response);
     }

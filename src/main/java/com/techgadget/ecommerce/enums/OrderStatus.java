@@ -2,7 +2,8 @@ package com.techgadget.ecommerce.enums;
 
 public enum OrderStatus {
     PENDING, // Waiting for payment
-    CONFIRMED, // Payment success, processing the order
+    PAID, // Order is paid
+    CONFIRMED, // Admin confirmed the paid order
     SHIPPED, // Order is shipped
     COMPLETED, // Order already confirmed by customer
     FAILED, // Failed because of payment
@@ -10,7 +11,8 @@ public enum OrderStatus {
 
     public boolean canTransitionTo(OrderStatus target) {
         return switch (this) {
-            case PENDING -> target == CONFIRMED || target == CANCELLED;
+            case PENDING -> target == PAID || target == FAILED;
+            case PAID -> target == CONFIRMED || target == CANCELLED || target == FAILED;
             case CONFIRMED -> target == SHIPPED || target == CANCELLED;
             case SHIPPED -> target == COMPLETED || target == CANCELLED;
             case FAILED, COMPLETED, CANCELLED -> false;

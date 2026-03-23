@@ -13,7 +13,8 @@ public class CartResponse {
     private Long totalPrice;
     private Integer totalItems;
 
-    @Getter
+    @Data
+    @NoArgsConstructor
     @AllArgsConstructor
     public static class CartItemResponse {
         private Long id;
@@ -25,7 +26,8 @@ public class CartResponse {
         private Long subtotal; // price * quantity
     }
 
-    @Getter
+    @Data
+    @NoArgsConstructor
     @AllArgsConstructor
     public static class CartCountResponse {
         private Integer count;

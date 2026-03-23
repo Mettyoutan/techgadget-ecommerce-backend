@@ -52,12 +52,12 @@ public class PaymentService {
 
         // USING DUMMY PAYMENT
         // Set payment status & order status
-        order.getPayment().setPaymentStatus(PaymentStatus.PAID);
-        order.setOrderStatus(OrderStatus.CONFIRMED);
+        order.getPayment().setPaymentStatus(PaymentStatus.PAID); // PAID
+        order.setOrderStatus(OrderStatus.PAID); // PAID
 
         orderRepository.save(order);
 
-        log.info("Order {} marked as PAID and COMPLETED by User {}", orderId, userId);
+        log.info("Order {} marked as PAID by User {}", orderId, userId);
 
         return mapToOrderResponse(order);
     }

@@ -460,7 +460,7 @@ public class OrderServiceTest {
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(pendingOrder));
 
-            OrderResponse response = orderService.adminUpdateOrderStatusToShip(1L, buildShipRequest());
+            OrderResponse response = orderService.adminUpdateOrderStatusToShipped(1L, buildShipRequest());
 
             assertThat(response).isNotNull();
             assertThat(pendingOrder.getOrderStatus()).isEqualTo(OrderStatus.SHIPPED);
@@ -480,7 +480,7 @@ public class OrderServiceTest {
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(pendingOrder));
 
-            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToShip(1L, buildShipRequest()))
+            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToShipped(1L, buildShipRequest()))
                     .isInstanceOf(ConflictException.class)
                     .hasMessageContaining("Cannot change order status");
 
@@ -494,7 +494,7 @@ public class OrderServiceTest {
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToShip(1L, buildShipRequest()))
+            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToShipped(1L, buildShipRequest()))
                     .isInstanceOf(NotFoundException.class)
                     .hasMessageContaining("Order not found.");
         }
@@ -513,7 +513,7 @@ public class OrderServiceTest {
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(pendingOrder));
 
-            orderService.adminUpdateOrderStatusToComplete(1L);
+            orderService.adminUpdateOrderStatusToCompleted(1L);
 
             assertThat(pendingOrder.getOrderStatus()).isEqualTo(OrderStatus.COMPLETED);
             verify(orderRepository, times(1)).save(pendingOrder);
@@ -528,7 +528,7 @@ public class OrderServiceTest {
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(pendingOrder));
 
-            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToComplete(1L))
+            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToCompleted(1L))
                     .isInstanceOf(ConflictException.class);
 
             verify(orderRepository, never()).save(any());
@@ -548,7 +548,7 @@ public class OrderServiceTest {
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(pendingOrder));
 
-            orderService.adminUpdateOrderStatusToCancel(1L);
+            orderService.adminUpdateOrderStatusToCancelled(1L);
 
             assertThat(pendingOrder.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED);
             verify(orderRepository, times(1)).save(pendingOrder);
@@ -563,7 +563,7 @@ public class OrderServiceTest {
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(pendingOrder));
 
-            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToCancel(1L))
+            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToCancelled(1L))
                     .isInstanceOf(ConflictException.class);
 
             verify(orderRepository, never()).save(any());
