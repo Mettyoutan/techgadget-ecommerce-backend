@@ -109,10 +109,10 @@ public class AdminOrderController {
     }
 
     /**
-     * Update order status to confirmed
+     * Update order status into processing
      */
     @Operation(
-            summary = "Admin update order status to confirmed",
+            summary = "Admin update order status to processing",
             description = ""
     )
     @ApiResponses({
@@ -124,13 +124,13 @@ public class AdminOrderController {
                             schema = @Schema(implementation = ErrorResponse.class)
                     )),
     })
-    @PatchMapping("/{orderId}/confirm")
-    public ResponseEntity<OrderResponse> updateOrderStatusToConfirmed(
+    @PatchMapping("/{orderId}/process")
+    public ResponseEntity<OrderResponse> updateOrderStatusToProcessing(
             @PathVariable Long orderId
     ) {
 
         OrderResponse response = orderService
-                .adminUpdateOrderStatusToConfirmed(orderId);
+                .adminUpdateOrderStatusToProcessing(orderId);
 
         return ResponseEntity.ok(response);
     }

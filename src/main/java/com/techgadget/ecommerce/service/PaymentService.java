@@ -51,9 +51,9 @@ public class PaymentService {
         }
 
         // USING DUMMY PAYMENT
-        // Set payment status & order status
+        // Set payment status = PAID
+        // Order status still PENDING, until admin PROCESSING
         order.getPayment().setPaymentStatus(PaymentStatus.PAID); // PAID
-        order.setOrderStatus(OrderStatus.PAID); // PAID
 
         orderRepository.save(order);
 

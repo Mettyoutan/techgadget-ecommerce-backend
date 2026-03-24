@@ -2,20 +2,28 @@ package com.techgadget.ecommerce.enums;
 
 public enum OrderStatus {
     PENDING, // Waiting for payment
-    PAID, // Order is paid
-    CONFIRMED, // Admin confirmed the paid order
+    PROCESSING, // order is processed by admin
     SHIPPED, // Order is shipped
     COMPLETED, // Order already confirmed by customer
-    FAILED, // Failed because of payment
     CANCELLED; // Cancelled by customer or admin
 
-    public boolean canTransitionTo(OrderStatus target) {
+    public boolean canTransitionTo(OrderStatus target, UserRole role) {
+
+        // Admin can cancel SHIPPED order
+        // & process order transition
+        if (role.equals(UserRole.ADMIN)) {
+            return switch (this) {
+                case PENDING -> target == PROCESSING || target == CANCELLED;
+                case PROCESSING-> target == SHIPPED || target == CANCELLED;
+                case SHIPPED -> target == COMPLETED || target == CANCELLED;
+                case COMPLETED, CANCELLED -> false;
+            };
+        }
+
+        // Customer can only cancel UNSHIPPED order
         return switch (this) {
-            case PENDING -> target == PAID || target == FAILED;
-            case PAID -> target == CONFIRMED || target == CANCELLED || target == FAILED;
-            case CONFIRMED -> target == SHIPPED || target == CANCELLED;
-            case SHIPPED -> target == COMPLETED || target == CANCELLED;
-            case FAILED, COMPLETED, CANCELLED -> false;
+            case PENDING, PROCESSING -> target == CANCELLED;
+            default -> false;
         };
     }
 }

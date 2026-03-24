@@ -1,7 +1,8 @@
 package com.techgadget.ecommerce.enums;
 
 public enum PaymentStatus {
-    PENDING,
+    PENDING, // Waiting for payment
     PAID,
-    FAILED
+    FAILED,
+    REFUNDED // cancelled after paid, so payment was refunded
 }

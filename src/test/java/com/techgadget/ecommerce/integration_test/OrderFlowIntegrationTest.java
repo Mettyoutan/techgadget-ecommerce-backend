@@ -321,8 +321,8 @@ public class OrderFlowIntegrationTest extends BaseIntegrationTest {
                             .header("Authorization", "Bearer " + customerToken)
             )
                     .andExpect(status().isCreated())
-                    // Must be paid
-                    .andExpect(jsonPath("$.orderStatus").value(OrderStatus.PAID.toString()))
+                    // Must be pending
+                    .andExpect(jsonPath("$.orderStatus").value(OrderStatus.PENDING.toString()))
                     // Must be paid
                     .andExpect(jsonPath("$.paymentStatus").value(PaymentStatus.PAID.toString()))
                     .andReturn();

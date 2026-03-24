@@ -10,6 +10,7 @@ import com.techgadget.ecommerce.dto.response.user.AddressResponse;
 import com.techgadget.ecommerce.dto.response.order.OrderResponse;
 import com.techgadget.ecommerce.dto.response.PaginatedResponse;
 import com.techgadget.ecommerce.entity.*;
+import com.techgadget.ecommerce.enums.UserRole;
 import com.techgadget.ecommerce.exception.BadRequestException;
 import com.techgadget.ecommerce.exception.ConflictException;
 import com.techgadget.ecommerce.exception.NotFoundException;
@@ -47,9 +48,10 @@ public class OrderService {
     // -------------------------
 
     /**
-     * Create order using selected cart items, not all
-     * Cart items are not getting removed
-     * Product stock is decreased when order is created (status PENDING)
+     * CUSTOMER
+     * - Create PENDING order using selected cart items, not all.
+     * - Product stock is decreased when order is created (status PENDING).
+     * Cart items are not getting removed.
      */
     @Transactional
     public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
@@ -207,7 +209,7 @@ public class OrderService {
         Payment payment = new Payment();
         payment.setOrder(order);
         payment.setAmount(order.getTotalPrice());
-        payment.setPaymentStatus(PaymentStatus.PENDING);
+        payment.setPaymentStatus(PaymentStatus.PENDING); // PENDING order
         payment.setPaymentMethod(paymentMethod);
 
         payment = paymentRepository.save(payment);
@@ -238,9 +240,9 @@ public class OrderService {
     }
 
     /**
-     * Cancel the order and RESTORE product stock
-     * Only allowed if order is still pending
-     * TODO: allowed paid order to be cancelled
+     * CUSTOMER
+     * - Cancel the (PENDING, PROCESSING) unshipped order.
+     * - Product stock is restored.
      */
     @Transactional
     public OrderResponse cancelOrder(Long userId, Long orderId) {
@@ -253,13 +255,22 @@ public class OrderService {
                     return new NotFoundException("Order not found.");
                 });
 
+        // Customer can only cancel UNSHIPPED order (PENDING, PROCESSING)
         OrderStatus orderStatus = order.getOrderStatus();
-        if (orderStatus != OrderStatus.PENDING) {
-            log.warn("Cannot cancel order {} because status is {}",
+        if (!orderStatus.canTransitionTo(OrderStatus.CANCELLED, UserRole.CUSTOMER)) {
+            log.warn("Can't cancel order {} because current order status is {}, not UNSHIPPED order.",
                     orderId, order.getOrderStatus());
-            throw new ConflictException("%s order cannot be cancelled.".formatted(
-                    orderStatus.toString().charAt(0) + orderStatus.toString().substring(1).toLowerCase())
-            );
+            throw new ConflictException("Order cannot be cancelled.");
+        }
+
+        // TODO: If order is PAID, implement REFUND logic
+        PaymentStatus paymentStatus = order.getPayment().getPaymentStatus();
+        if (paymentStatus == PaymentStatus.PAID) {
+            // TODO: SOME REFUND LOGIC
+            // Trigger refund to payment gateway
+            order.getPayment().setPaymentStatus(PaymentStatus.REFUNDED);
+        } else {
+            order.getPayment().setPaymentStatus(PaymentStatus.FAILED);
         }
 
         // Restore stock
@@ -277,6 +288,7 @@ public class OrderService {
             int restoredStock = product.getStock() + orderItem.getQuantity();
             product.setStock(restoredStock);
             productRepository.save(product);
+
         }
 
         // Set new order & payment status
@@ -480,7 +492,7 @@ public class OrderService {
 
     /**
      * ADMIN - get order
-     * 
+     *
      */
     @Transactional(readOnly = true)
     public OrderResponse adminGetOrderById(Long orderId) {
@@ -500,14 +512,15 @@ public class OrderService {
     }
 
     /**
-     * Update order status into confirmed
+     * Admin update order status into PROCESSING.
+     * Available for PAID order
      */
     @Transactional
-    public OrderResponse adminUpdateOrderStatusToConfirmed(Long orderId) {
+    public OrderResponse adminUpdateOrderStatusToProcessing(Long orderId) {
 
-        log.debug("Processing admin update order status to confirmed - Order: {}", orderId);
+        log.debug("Admin processing update order status to PROCESSING - Order: {}", orderId);
 
-        OrderStatus target = OrderStatus.CONFIRMED;
+        OrderStatus target = OrderStatus.PROCESSING;
 
         Order order = orderRepository
                 .findOrderByIdWithRelationForAdmin(orderId)
@@ -516,19 +529,18 @@ public class OrderService {
                     return new NotFoundException("Order not found.");
                 });
 
-        // Payment must be PAID too
+        // Payment must be PAID
         if (!order.getPayment().getPaymentStatus().equals(PaymentStatus.PAID)) {
             log.warn("Order {} has not been paid, so can't be confirmed", orderId);
-            throw new ConflictException("Cannot confirm order that has not been paid.");
+            throw new ConflictException("Cannot process order that has not been paid.");
         }
 
         OrderStatus current = order.getOrderStatus();
 
-        if (!current.canTransitionTo(target)) {
+        if (!current.canTransitionTo(target, UserRole.ADMIN)) {
             log.warn("Invalid status transition from {} to {} for order id = {}",
                     target, current, orderId);
-            throw new ConflictException("Cannot change order status from " +
-                    current + " to " + target);
+            throw new ConflictException("Order can't be processed.");
         }
 
         order.setOrderStatus(target);
@@ -541,12 +553,12 @@ public class OrderService {
     }
 
     /**
-     * Update order status into shipped
+     * Update order status into SHIPPED
      */
     @Transactional
     public OrderResponse adminUpdateOrderStatusToShipped(Long orderId, UpdateOrderStatusToShipRequest request) {
 
-        log.debug("Processing admin update order status to shipped - " +
+        log.debug("Admin processing update order status to SHIPPED: " +
                 "Order: {}, ShippingProvider: {}, TrackingNumber: {}",
                 orderId, request.getShippingProvider(), request.getTrackingNumber());
 
@@ -562,11 +574,10 @@ public class OrderService {
         // Check if the current order status can be transitioned
         OrderStatus current = order.getOrderStatus();
 
-        if (!current.canTransitionTo(target)) {
+        if (!current.canTransitionTo(target, UserRole.ADMIN)) {
             log.warn("Invalid status transition from {} to {} for order id = {}",
                     target, current, orderId);
-            throw new ConflictException("Cannot change order status from " +
-                    current + " to " + target);
+            throw new ConflictException("Order can't shipped.");
         }
 
         // Set order status & add some shipping order information
@@ -583,12 +594,12 @@ public class OrderService {
     }
 
     /**
-     * Update order status into completed
+     * Update order status into COMPLETED
      */
     @Transactional
     public OrderResponse adminUpdateOrderStatusToCompleted(Long orderId) {
 
-        log.debug("Processing admin update order status to complete - Order: {}", orderId);
+        log.debug("Admin processing update order status to complete - Order: {}", orderId);
 
         OrderStatus target = OrderStatus.COMPLETED;
 
@@ -602,11 +613,10 @@ public class OrderService {
         // Check if the current order status can be transitioned
         OrderStatus current = order.getOrderStatus();
 
-        if (!current.canTransitionTo(target)) {
+        if (!current.canTransitionTo(target, UserRole.ADMIN)) {
             log.warn("Invalid status transition from {} to {} for order id = {}",
                     target, current, orderId);
-            throw new ConflictException("Cannot change order status from " +
-                    current + " to " + target);
+            throw new ConflictException("Order can't be completed.");
         }
 
         order.setOrderStatus(target);
@@ -618,6 +628,9 @@ public class OrderService {
         return mapToOrderResponse(order);
     }
 
+    /**
+     * Update order status into CANCELLED
+     */
     @Transactional
     public OrderResponse adminUpdateOrderStatusToCancelled(Long orderId) {
 
@@ -635,11 +648,10 @@ public class OrderService {
         // Check if the current order status can be transitioned
         OrderStatus current = order.getOrderStatus();
 
-        if (!current.canTransitionTo(target)) {
+        if (!current.canTransitionTo(target, UserRole.ADMIN)) {
             log.warn("Invalid status transition from {} to {} for order id = {}",
                     target, current, orderId);
-            throw new ConflictException("Cannot change order status from " +
-                    current + " to " + target);
+            throw new ConflictException("Order can't be cancelled.");
         }
 
         order.setOrderStatus(target);

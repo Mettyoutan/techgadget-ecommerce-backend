@@ -20,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -127,41 +126,14 @@ public class OrderServiceTest {
 
     private Order createPaidOrder() {
 
-        // Create paid order with 1 orderItem
-        Order paidOrder = new Order(user, "ORD-1", shippingAddress);
-        ReflectionTestUtils.setField(paidOrder, "id", 1L);
-
-        OrderItem orderItem = new OrderItem(
-                paidOrder,
-                1L,
-                "Iphone 14",
-                null,
-                2,
-                15_000_000L
-        );
-        ReflectionTestUtils.setField(orderItem, "id", 1L);
-
-        paidOrder.addItem(orderItem);
-
-        // Set order status into PAID
-        paidOrder.setOrderStatus(OrderStatus.PAID);
-
-        // Add PAID payment to order
-        Payment pendingPayment = new Payment(
-                paidOrder,
-                15_000_000L,
-                PaymentStatus.PAID, // PAID
-                PaymentMethod.DUMMY,
-                null
-        );
-        ReflectionTestUtils.setField(pendingPayment, "id", 1L);
-
-        paidOrder.setPayment(pendingPayment);
+        // Create pending order, then process payment
+        Order paidOrder = createPendingOrder();
+        paidOrder.getPayment().setPaymentStatus(PaymentStatus.PAID);
 
         return paidOrder;
     }
 
-    private Order createConfirmedOrder() {
+    private Order createProcessedOrder() {
 
         // Create confirmed order with 1 item
         Order confirmedOrder = new Order(user, "ORD-1", shippingAddress);
@@ -179,8 +151,8 @@ public class OrderServiceTest {
 
         confirmedOrder.addItem(orderItem);
 
-        // Set order status into CONFIRMED
-        confirmedOrder.setOrderStatus(OrderStatus.CONFIRMED);
+        // Set order status into PROCESSING
+        confirmedOrder.setOrderStatus(OrderStatus.PROCESSING);
 
         // Add PAID payment to order
         Payment pendingPayment = new Payment(
@@ -370,19 +342,17 @@ public class OrderServiceTest {
         }
 
         @Test
-        @DisplayName("order status is not PENDING - throws ConflictException")
-        void orderStatusNotPending_throwsConflictException() {
+        @DisplayName("order status is shipped - throws ConflictException")
+        void orderStatusShipped_throwsConflictException() {
 
-            Order pendingOrder = createPendingOrder();
+            Order shippedOrder = createProcessedOrder();
+            shippedOrder.setOrderStatus(OrderStatus.SHIPPED);
 
-            // Order is already CONFIRMED — cannot be cancelled via customer endpoint
-            pendingOrder.setOrderStatus(OrderStatus.CONFIRMED);
-
-            when(orderRepository.findUserOrderById(1L, 1L)).thenReturn(Optional.of(pendingOrder));
+            when(orderRepository.findUserOrderById(1L, 1L)).thenReturn(Optional.of(shippedOrder));
 
             assertThatThrownBy(() -> orderService.cancelOrder(1L, 1L))
                     .isInstanceOf(ConflictException.class)
-                    .hasMessageContaining("Confirmed order cannot be cancelled.");
+                    .hasMessageContaining("Order cannot be cancelled.");
 
             verify(productRepository, never()).save(any());
             verify(orderRepository, never()).save(any());
@@ -537,12 +507,12 @@ public class OrderServiceTest {
     }
 
     @Nested
-    @DisplayName("adminUpdateOrderStatusToConfirmed()")
-    class AdminUpdateOrderToConfirmed {
+    @DisplayName("adminUpdateOrderStatusToProcessing()")
+    class AdminUpdateOrderToProcessing {
 
         @Test
-        @DisplayName("success - PAID order to CONFIRMED")
-        void success_paidOrderToConfirmed() {
+        @DisplayName("success - PAID order to PROCESSING")
+        void success_paidOrderToProcessing() {
 
             // Order already PAID
             Order paidOrder = createPaidOrder();
@@ -550,14 +520,14 @@ public class OrderServiceTest {
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(paidOrder));
 
-            OrderResponse response = orderService.adminUpdateOrderStatusToConfirmed(1L);
+            OrderResponse response = orderService.adminUpdateOrderStatusToProcessing(1L);
 
-            assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.CONFIRMED.toString());
+            assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.PROCESSING.toString());
             assertThat(response.getPaymentStatus()).isEqualTo(PaymentStatus.PAID.toString());
         }
 
         @Test
-        @DisplayName("invalid transition - PENDING order to CONFIRMED, throws ConflictException")
+        @DisplayName("invalid transition - PENDING order to PROCESSING, throws ConflictException")
         void invalidTransition_throwsConflictException() {
 
             Order pendingOrder = createPendingOrder();
@@ -565,7 +535,7 @@ public class OrderServiceTest {
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(pendingOrder));
 
-            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToConfirmed(1L))
+            assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToProcessing(1L))
                     .isInstanceOf(ConflictException.class);
 
             verify(orderRepository, never()).save(any(Order.class));
@@ -582,9 +552,9 @@ public class OrderServiceTest {
 
         @Test
         @DisplayName("success - CONFIRMED order to SHIPPED with tracking info")
-        void success_confirmedOrderToShipped() {
+        void success_processingOrderToShipped() {
 
-            Order confirmedOrder = createConfirmedOrder();
+            Order confirmedOrder = createProcessedOrder();
 
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(confirmedOrder));
@@ -613,7 +583,7 @@ public class OrderServiceTest {
 
             assertThatThrownBy(() -> orderService.adminUpdateOrderStatusToShipped(1L, buildShipRequest()))
                     .isInstanceOf(ConflictException.class)
-                    .hasMessageContaining("Cannot change order status");
+                    .hasMessageContaining("Order can't shipped.");
 
             verify(orderRepository, never()).save(any());
         }
@@ -655,7 +625,7 @@ public class OrderServiceTest {
         @DisplayName("invalid transition - COMPLETED cannot transition further")
         void invalidTransition_throwsConflictException() {
 
-            Order completedOrder = createConfirmedOrder();
+            Order completedOrder = createProcessedOrder();
 
             completedOrder.setOrderStatus(OrderStatus.COMPLETED);
 
@@ -677,7 +647,7 @@ public class OrderServiceTest {
         @DisplayName("success - CONFIRMED order cancelled by admin")
         void success_confirmedOrderToCancelled() {
 
-            Order confirmedOrder = createConfirmedOrder();
+            Order confirmedOrder = createProcessedOrder();
 
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
                     .thenReturn(Optional.of(confirmedOrder));
@@ -692,7 +662,7 @@ public class OrderServiceTest {
         @DisplayName("invalid transition - CANCELLED cannot transition further")
         void invalidTransition_throwsConflictException() {
 
-            Order cancelledOrder = createConfirmedOrder();
+            Order cancelledOrder = createProcessedOrder();
             cancelledOrder.setOrderStatus(OrderStatus.CANCELLED);
 
             when(orderRepository.findOrderByIdWithRelationForAdmin(1L))
