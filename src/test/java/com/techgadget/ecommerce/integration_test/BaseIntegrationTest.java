@@ -65,18 +65,18 @@ public abstract class BaseIntegrationTest {
     /*
      * Repositories
      */
-    @Autowired private ProductReviewRepository productReviewRepository;
-    @Autowired private CartItemRepository cartItemRepository;
-    @Autowired private PaymentRepository paymentRepository;
-    @Autowired private OrderRepository orderRepository;
-    @Autowired private CartRepository cartRepository;
-    @Autowired private AddressRepository addressRepository;
-    @Autowired private RefreshTokenRepository refreshTokenRepository;
-    @Autowired private ProductImageRepository productImageRepository;
-    @Autowired private UserRepository userRepository;
-    @Autowired private ProductRepository productRepository;
-    @Autowired private CategoryRepository categoryRepository;
-    @Autowired private StringRedisTemplate stringRedisTemplate;
+    @Autowired protected ProductReviewRepository productReviewRepository;
+    @Autowired protected CartItemRepository cartItemRepository;
+    @Autowired protected PaymentRepository paymentRepository;
+    @Autowired protected OrderRepository orderRepository;
+    @Autowired protected CartRepository cartRepository;
+    @Autowired protected AddressRepository addressRepository;
+    @Autowired protected RefreshTokenRepository refreshTokenRepository;
+    @Autowired protected ProductImageRepository productImageRepository;
+    @Autowired protected UserRepository userRepository;
+    @Autowired protected ProductRepository productRepository;
+    @Autowired protected CategoryRepository categoryRepository;
+    @Autowired protected StringRedisTemplate stringRedisTemplate;
 
     /**
      * Full cleanup before each test (repositories & redis)
