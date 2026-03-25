@@ -175,6 +175,11 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.midtrans</groupId>
+            <artifactId>java-library</artifactId>
+            <version>3.2.1</version>
+        </dependency>
 
     </dependencies>
 
