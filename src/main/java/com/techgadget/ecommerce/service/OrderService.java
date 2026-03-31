@@ -663,7 +663,9 @@ public class OrderService {
         return mapToOrderResponse(order);
     }
 
-
+    /**
+     * Helper method to generate unique order number
+     */
     private String generateOrderNumber(Long userId) {
         return "ORD-" + System.currentTimeMillis() + "-" + userId;
     }

@@ -2,6 +2,7 @@ package com.techgadget.ecommerce.entity;
 
 import com.techgadget.ecommerce.enums.PaymentMethod;
 import com.techgadget.ecommerce.enums.PaymentStatus;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -42,13 +43,26 @@ public class Payment extends Auditable {
     @Column(nullable = false)
     private PaymentMethod paymentMethod;
 
-    private String reference; // dummy payment code (OPTIONAL)
+    private String snapToken;       // Token for Midtrans popup
+    private String midtransOrderId; // Order ID from Midtrans
 
-    public Payment(Order order, Long amount, PaymentStatus paymentStatus, PaymentMethod paymentMethod, String reference) {
+    private String reference;
+
+    public Payment(
+            Order order,
+            Long amount,
+            PaymentStatus paymentStatus,
+            PaymentMethod paymentMethod,
+            @Nullable String snapToken,
+            @Nullable String midtransOrderId,
+            @Nullable String reference
+    ) {
         this.order = order;
         this.amount = amount;
         this.paymentStatus = paymentStatus;
         this.paymentMethod = paymentMethod;
+        this.snapToken = snapToken;
+        this.midtransOrderId = midtransOrderId;
         this.reference = reference;
     }
 
