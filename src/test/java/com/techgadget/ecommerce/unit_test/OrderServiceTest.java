@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -115,6 +116,8 @@ public class OrderServiceTest {
                 15_000_000L,
                 PaymentStatus.PENDING,
                 PaymentMethod.DUMMY,
+                null,
+                null,
                 null
         );
         ReflectionTestUtils.setField(pendingPayment, "id", 1L);
@@ -160,9 +163,10 @@ public class OrderServiceTest {
                 15_000_000L,
                 PaymentStatus.PAID, // PAID
                 PaymentMethod.DUMMY,
-                null
+                null, null, null
         );
         ReflectionTestUtils.setField(pendingPayment, "id", 1L);
+        
 
         confirmedOrder.setPayment(pendingPayment);
 

@@ -263,16 +263,6 @@ public class OrderService {
             throw new ConflictException("Order cannot be cancelled.");
         }
 
-        // TODO: If order is PAID, implement REFUND logic
-        PaymentStatus paymentStatus = order.getPayment().getPaymentStatus();
-        if (paymentStatus == PaymentStatus.PAID) {
-            // TODO: SOME REFUND LOGIC
-            // Trigger refund to payment gateway
-            order.getPayment().setPaymentStatus(PaymentStatus.REFUNDED);
-        } else {
-            order.getPayment().setPaymentStatus(PaymentStatus.FAILED);
-        }
-
         // Restore stock
         for (OrderItem orderItem : order.getItems()) {
             // Get the product
@@ -291,10 +281,20 @@ public class OrderService {
 
         }
 
-        // Set new order & payment status
+        // Set new order status
         OrderStatus oldOrderStatus = order.getOrderStatus();
         order.setOrderStatus(OrderStatus.CANCELLED);
-        order.getPayment().setPaymentStatus(PaymentStatus.FAILED);
+
+        // Set new payment status
+        // TODO: If order is PAID, implement REFUND logic
+        PaymentStatus paymentStatus = order.getPayment().getPaymentStatus();
+        if (paymentStatus == PaymentStatus.PAID) {
+            // TODO: SOME REFUND LOGIC
+            // Trigger refund to payment gateway
+            order.getPayment().setPaymentStatus(PaymentStatus.REFUNDED);
+        } else {
+            order.getPayment().setPaymentStatus(PaymentStatus.FAILED);
+        }
 
         log.info("Order {} successfully set status from {} to {}",
                 orderId, oldOrderStatus, order.getOrderStatus());

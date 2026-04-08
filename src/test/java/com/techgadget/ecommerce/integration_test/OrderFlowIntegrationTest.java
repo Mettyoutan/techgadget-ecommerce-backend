@@ -276,7 +276,7 @@ public class OrderFlowIntegrationTest extends BaseIntegrationTest {
 
         @Test
         @DisplayName("success - order cancelled and stock restored")
-        void success_orderCancelledAndStockRestored() throws Exception {
+        void success_pendingOrderCancelledAndStockRestored() throws Exception {
 
             // First order success with quantity 10, stock sufficient
             long cartItemId = addProductToCart(10);
@@ -309,7 +309,7 @@ public class OrderFlowIntegrationTest extends BaseIntegrationTest {
         }
 
         @Test
-        void cancelNonPendingOrder_returns409() throws Exception {
+        void success_nonPendingOrderCancelledAndRefunded() throws Exception {
 
             // First order success with quantity 10, stock sufficient
             long cartItemId = addProductToCart(10);
@@ -327,14 +327,21 @@ public class OrderFlowIntegrationTest extends BaseIntegrationTest {
                     .andExpect(jsonPath("$.paymentStatus").value(PaymentStatus.PAID.toString()))
                     .andReturn();
 
-            // Cancel paid order (NOT WORKING)
-            mockMvc.perform(
+            // Cancel paid order (REFUNDED)
+            MvcResult result = mockMvc.perform(
                     post("/orders/%s/cancel".formatted(order.getId()))
                             .header("Authorization", "Bearer " + customerToken)
             )
-                    // Must be 409
-                    .andExpect(status().isConflict())
-                    .andExpect(jsonPath("$.message").value("Paid order cannot be cancelled."));
+                    // Must be 200
+                    .andExpect(status().isOk())
+                    .andReturn();
+
+            OrderResponse cancelledOrder = objectMapper.readValue(
+                    result.getResponse().getContentAsString(), OrderResponse.class);
+
+            // Assert cancelled order response
+            assertThat(cancelledOrder.getOrderStatus()).isEqualTo(OrderStatus.CANCELLED.toString());
+            assertThat(cancelledOrder.getPaymentStatus()).isEqualTo(PaymentStatus.REFUNDED.toString());
         }
     }
 }
