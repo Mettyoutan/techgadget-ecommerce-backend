@@ -1,0 +1,78 @@
+<configuration>
+
+    <!--
+        DEVELOPMENT PROFILE — Human-readable format
+        Active when running locally (no profile, or "local"/"dev" profile)
+
+        Format: timestamp [traceId] level logger - message
+        %X{traceId:-} means: read "traceId" from MDC, default to empty string if absent.
+        This is how traceId (injected by Micrometer) appears in plain-text logs.
+    -->
+    <springProfile name="!prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} [%X{traceId:-}] %-5level %logger{36} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <!-- Your app's classes — set to DEBUG during development -->
+        <logger name="com.techgadget.ecommerce" level="DEBUG"/>
+    </springProfile>
+
+    <!--
+        PRODUCTION PROFILE — JSON structured format
+        Active when spring.profiles.active=prod
+
+        LogstashEncoder converts every log event into a JSON document.
+        Every MDC field (traceId, spanId, userId, etc.) is automatically
+        included as a top-level JSON field — no extra code needed.
+
+        Example output (one line per log event):
+        {
+          "timestamp": "2025-04-11T10:32:45.123Z",
+          "level": "INFO",
+          "logger_name": "c.t.e.service.OrderService",
+          "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+          "spanId": "00f067aa0ba902b7",
+          "userId": "42",
+          "message": "Order created successfully",
+          "service": "techgadget-backend"
+        }
+    -->
+    <springProfile name="prod">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <!--
+                    customFields: static key-value pairs added to every log line.
+                    Useful to identify which service produced the log
+                    when logs from multiple services are aggregated in one place (e.g., Grafana Loki).
+                -->
+                <customFields>{"service":"techgadget-backend"}</customFields>
+
+                <!--
+                    includeContext: adds Logback context properties.
+                    Turned off because we don't need Logback internals in the output.
+                -->
+                <includeContext>false</includeContext>
+
+                <!--
+                    timeZone: always use UTC in production.
+                    Timestamps in local timezone cause confusion when servers
+                    are in different regions or DST kicks in.
+                -->
+                <timeZone>UTC</timeZone>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+
+        <logger name="com.techgadget.ecommerce" level="INFO"/>
+    </springProfile>
+
+</configuration>

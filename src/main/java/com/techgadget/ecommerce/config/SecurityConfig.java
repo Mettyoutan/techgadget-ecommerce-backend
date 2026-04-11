@@ -1,10 +1,7 @@
 package com.techgadget.ecommerce.config;
 
 import com.techgadget.ecommerce.enums.UserRole;
-import com.techgadget.ecommerce.security.AppAccessDeniedHandler;
-import com.techgadget.ecommerce.security.AppAuthenticationEntryPoint;
-import com.techgadget.ecommerce.security.JwtAuthenticationFilter;
-import com.techgadget.ecommerce.security.RateLimitFilter;
+import com.techgadget.ecommerce.security.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +32,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
+    private final MdcContextFilter mdcContextFilter;
+
     private final AppAuthenticationEntryPoint appAuthenticationEntryPoint;
     private final AppAccessDeniedHandler appAccessDeniedHandler;
 
@@ -87,6 +86,8 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 // Add RateLimitFilter before JwtFilter
                 .addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class)
+                // Add MdcContextFilter after JwtFilter
+                .addFilterAfter(mdcContextFilter, JwtAuthenticationFilter.class)
                 .build();
     }
 
