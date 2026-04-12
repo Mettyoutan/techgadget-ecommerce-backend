@@ -6,11 +6,15 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <!-- suppress noise -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+
+    <!-- Change LEVEL between [warn, info, debug]-->
+    <logger name="com.techgadget.ecommerce" level="DEBUG" />
+
+    <root level="WARN">
         <appender-ref ref="STDOUT"/>
     </root>
-
-    // Change LEVEL between info and debug
-    <logger name="com.techgadget.ecommerce" level="DEBUG" />
 
 </configuration>

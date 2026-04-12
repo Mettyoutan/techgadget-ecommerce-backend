@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: warn
+
+management:
+  tracing:
+    # Sample 100% of requests. In production, lower this (e.g. 0.1 = 10%)
+    # to avoid performance overhead from tracing every single request.
+    sampling:
+      probability: 1.0
