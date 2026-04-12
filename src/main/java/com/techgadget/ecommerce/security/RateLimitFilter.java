@@ -21,6 +21,8 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class RateLimitFilter extends OncePerRequestFilter {
 
+    private static final String API_PATH = "/api/auth";
+
     private final RateLimitService rateLimitService;
     private final JwtTokenProvider jwtTokenProvider;
     private final ObjectMapper objectMapper;
@@ -36,6 +38,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                                     FilterChain filterChain
     ) throws ServletException, IOException {
 
+        // Path always starts with /api
         String path = request.getRequestURI();
         RateLimitTier tier = resolveTier(path, request.getMethod());
         String key = resolveKey(request, tier);
@@ -57,7 +60,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
      */
     private RateLimitTier resolveTier(String path, String method) {
         // Auth tier
-        if (path.startsWith("/auth") && method.equals("POST")) {
+        if (path.startsWith(API_PATH) && method.equals("POST")) {
             return RateLimitTier.AUTH;
         }
 
