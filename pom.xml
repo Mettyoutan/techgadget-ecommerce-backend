@@ -227,21 +227,31 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- MICROMETER TRACING BRIDGE -->
+<!--        &lt;!&ndash; MICROMETER TRACING BRIDGE &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>io.micrometer</groupId>-->
+<!--            <artifactId>micrometer-tracing-bridge-otel</artifactId>-->
+<!--        </dependency>-->
+
+        <!-- OPEN TELEMETRY STARTER -->
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-tracing-bridge-otel</artifactId>
-            <version>1.7.0-M4</version>
-            <scope>compile</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-opentelemetry</artifactId>
         </dependency>
 
-        <!-- OPEN TELEMETRY SDK -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
-            <version>1.60.1</version>
-            <scope>compile</scope>
-        </dependency>
+<!--        &lt;!&ndash; OPEN TELEMETRY SDK &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>io.opentelemetry</groupId>-->
+<!--            <artifactId>opentelemetry-sdk</artifactId>-->
+<!--            <version>1.60.1</version>-->
+<!--            <scope>compile</scope>-->
+<!--        </dependency>-->
+
+<!--        &lt;!&ndash; OPEN TELEMETRY EXPORTER LOGGING &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>io.opentelemetry</groupId>-->
+<!--            <artifactId>opentelemetry-exporter-logging</artifactId>-->
+<!--        </dependency>-->
 
     </dependencies>
 

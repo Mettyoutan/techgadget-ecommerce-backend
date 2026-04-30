@@ -22,9 +22,11 @@ import java.io.IOException;
  *   for every HTTP request — we don't need to do that ourselves.
  *   However, Micrometer knows nothing about <b>who</b> is making the request.
  *   This filter runs after JwtAuthenticationFilter has populated
- *   SecurityContextHolder, reads the authenticated user's ID from there,
+ *   SecurityContextHolder, reads the <b>authenticated user's</b> ID from there,
  *   and adds it to MDC so that every log line in the request automatically
  *   carries the userId field — without passing it as a parameter everywhere.
+ *
+ *   Even though Authentication is not populated, <b>IP address</b> always being putted to MDC
  *
  * Filter order:
  *   ... → JwtAuthenticationFilter → MdcContextFilter → ...
@@ -41,6 +43,7 @@ import java.io.IOException;
 public class MdcContextFilter extends OncePerRequestFilter {
 
     private static final String MDC_USER_ID = "userId";
+    private static final String MDC_IP_ADDRESS = "ipAddress";
 
     @Override
     protected void doFilterInternal(
@@ -55,6 +58,12 @@ public class MdcContextFilter extends OncePerRequestFilter {
             // If the request had a valid token, SecurityContextHolder is populated.
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
+            // Put ip address
+            String ip = getIpAddress(request);
+            MDC.put(MDC_IP_ADDRESS, ip);
+            log.debug("MDC ipAddress {} is populated", ip);
+
+            // If authentication exists, put user id
             if (auth != null && auth.isAuthenticated() &&
                     auth.getPrincipal() instanceof CustomUserDetails userDetails) {
                 // Put userId into MDC. From this point forward, every log statement
@@ -62,7 +71,7 @@ public class MdcContextFilter extends OncePerRequestFilter {
                 // automatically include "userId": "42" in its output.
                 MDC.put(MDC_USER_ID, String.valueOf(userDetails.getUserId()));
 
-                log.debug("MDC userId %s is populated".formatted(userDetails.getUserId()));
+                log.debug("MDC userId {} is populated", userDetails.getUserId());
             }
 
             filterChain.doFilter(request, response);
@@ -71,8 +80,17 @@ public class MdcContextFilter extends OncePerRequestFilter {
             // Always clean up MDC fields we added.
             // Note: we only remove what we added — traceId and spanId are managed
             // by Micrometer and will be cleaned up by its own infrastructure.
-            MDC.remove(MDC_USER_ID);
+            MDC.clear();
         }
 
+    }
+
+    // Helper method to get IP address
+    private String getIpAddress(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }
