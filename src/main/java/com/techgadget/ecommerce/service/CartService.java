@@ -31,13 +31,12 @@ public class CartService {
      * If not exists (null), create new cart
      */
     private Cart getOrCreateCartEntity(Long userId) {
-        log.debug("Processing get or create cart entity - User: {}", userId);
 
         // Get cart with OPTIMIZED QUERY --> JOIN FETCH items
         Cart cart = cartRepository.findByUser_IdWithItems(userId).orElse(null);
 
         if (cart == null) {
-            log.info("Cart not found for user id = {}.", userId);
+            log.debug("Cart not found, creating.");
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> {
                         log.warn("User not found with id = {}.", userId);
@@ -48,7 +47,7 @@ public class CartService {
             cart = cartRepository.save(new Cart(user));
         }
 
-        log.debug("Cart retrieved/created - Cart: {}", cart.getId());
+        log.debug("Cart retrieved/created. [cartId={}]", cart.getId());
 
         return cart;
     }
@@ -68,8 +67,8 @@ public class CartService {
      */
     @Transactional
     public CartResponse addToCart(Long userId, AddCartItemRequest request) {
-        log.debug("Processing add to cart request - User: {}, Product: {}, Quantity: {}",
-                userId, request.getProductId(), request.getQuantity());
+        log.debug("Adding items to cart. [productId={}, itemQuantity={}]",
+                request.getProductId(), request.getQuantity());
 
         // Get or create cart
         Cart cart = getOrCreateCartEntity(userId);
@@ -77,7 +76,7 @@ public class CartService {
         // Get product & check stock
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> {
-                    log.warn("Product {} not found", request.getProductId());
+                    log.warn("Product not found. [productId={}]", request.getProductId());
                     return new NotFoundException("Product not found.");
                 });
 
@@ -95,8 +94,8 @@ public class CartService {
             int newQuantity = oldQuantity + request.getQuantity();
 
             if (!product.isStockSufficient(newQuantity)) {
-                log.warn("User {} increases CartItem with new quantity {}, but stock not sufficient",
-                        userId, newQuantity);
+                log.warn("Insufficient stock. [productId={}, requested={}, stock={}]",
+                        product.getId(), newQuantity, product.getStock());
                 throw new ConflictException("Stock quantity not sufficient.");
             }
 
@@ -108,14 +107,14 @@ public class CartService {
 //                    cart.getItems().set(index, cartItem);  // Force update reference
 //                }
 
-            log.debug("Updated existing cart item: CartItem={}, Product={}, Quantity={} -> {}",
+            log.debug("Cart item quantity updated. [cartItemId={}, productId={}, oldQuantity={}, newQuantity={}]",
                     cartItem.getId(), product.getId(), oldQuantity, newQuantity);
 
         } else {
             // Check if product stock not sufficient to quantity
             if (!product.isStockSufficient(request.getQuantity())) {
-                log.warn("User {} adds new CartItem with quantity {}, but stock not sufficient",
-                        userId, request.getQuantity());
+                log.warn("Insufficient stock. [productId={}, requested={}, stock={}]",
+                        product.getId(), request.getQuantity(), product.getStock());
                 throw new ConflictException("Stock quantity not sufficient.");
             }
 
@@ -123,21 +122,20 @@ public class CartService {
             cartItem = new CartItem(cart, product, request.getQuantity());
             cart.addItem(cartItem);
 
-            log.debug("Added new cart item - CartItem: {}, Product: {}, Quantity: {}",
-                    cartItem.getId(), product.getId(), request.getQuantity());
+            log.debug("New cart item created. [cartId={}, cartItemId={}, productId={}, quantity={}, totalItems={}]",
+                    cart.getId(), cartItem.getId(), product.getId(), request.getQuantity(), cart.getItems().size());
         }
 
         // Save cart
         cart = cartRepository.save(cart);
 
-        log.info("User {} successfully added product {} to cart {} - Quantity: {}, " +
-                        "Cart Total Items: {}, Cart Value: Rp {}",
-                userId,
+        log.info("Item added to cart successfully. " +
+                        "[productId={}, cartId={}, quantity={}, totalItems={}]",
                 request.getProductId(),
                 cart.getId(),
                 request.getQuantity(),
-                cart.getItems().size(),
-                cart.getTotalItemsQuantity());
+                cart.getItems().size()
+        );
 
         return mapToCartResponse(cart);
     }
@@ -147,8 +145,8 @@ public class CartService {
      */
     @Transactional
     public CartResponse updateCartItem(Long userId, Long cartItemId, UpdateCartItemRequest request) {
-        log.debug("Processing update cart item - User: {}, CartItem: {}, Quantity: {}",
-                userId, cartItemId, request.getQuantity());
+        log.debug("Updating cart item. [cartItemId={}, newQuantity={}",
+                cartItemId, request.getQuantity());
 
         // Get cart item using id and user id
         CartItem cartItem = cartItemRepository.findByIdAndCart_User_IdWithProduct(cartItemId, userId)
@@ -163,11 +161,11 @@ public class CartService {
 
         Cart cart = getOrCreateCartEntity(userId);
 
-        log.info("User {} successfully updated cart item {} in cart {} - Quantity: {}",
-                userId,
-                cartItemId,
+        log.info("Cart item updated successfully. [cartId={}, cartItemId={}, quantity={}]",
                 cart.getId(),
-                request.getQuantity());
+                cartItemId,
+                request.getQuantity()
+        );
 
         return mapToCartResponse(cart);
     }
@@ -177,8 +175,7 @@ public class CartService {
      */
     @Transactional
     public CartResponse removeCartItem(Long userId, Long cartItemId) {
-        log.debug("Processing remove cart item: User={}, CartItem={}",
-                userId, cartItemId);
+        log.debug("Removing cart item. [cartItemId={}]", cartItemId);
 
         Cart cart = getOrCreateCartEntity(userId);
 
@@ -187,7 +184,7 @@ public class CartService {
                 .stream()
                 .filter(ci -> ci.getId().equals(cartItemId)).findFirst()
                 .orElseThrow(() -> {
-                    log.warn("CartItem {} not found: User={}.", cartItemId, userId);
+                    log.warn("Cart item not found. [cartItemId={}]", cartItemId);
                     return new NotFoundException("Cart item not found.");
                 });
 
@@ -195,36 +192,32 @@ public class CartService {
         cart.getItems().remove(cartItem);
         cartRepository.save(cart);
 
-        log.info("User {} successfully removed cart item {} in cart {}",
-                userId, cartItemId, cart.getId());
+        log.info("Cart item removed successfully. [cartId={}, cartItemId={}]", cart.getId(), cartItemId);
 
         return mapToCartResponse(cart);
     }
 
     @Transactional
     public CartResponse clearCart(Long userId) {
-        log.debug("Processing clear cart - User: {}", userId);
+        log.debug("Clearing cart.");
 
         Cart cart = getOrCreateCartEntity(userId);
+        int itemsCleared = cart.getItems().size();
 
         cart.getItems().clear();
         cartRepository.save(cart);
 
-        log.info("User {} successfully cleared cart {}",
-                userId, cart.getId());
+        log.info("Cart cleared successfully. [cartId={}, itemsCleared={}]",
+                cart.getId(), itemsCleared);
 
         return mapToCartResponse(cart);
     }
 
     @Transactional(readOnly = true)
     public CartResponse.CartCountResponse getCartItemCount(Long userId) {
-        log.debug("Processing get cart item count - User: {}", userId);
+        log.debug("Getting cart items count.");
 
         Cart cart = getOrCreateCartEntity(userId);
-
-        log.info("User {} got total {} cart items on cart {}",
-                userId, cart.getTotalItemsQuantity(), cart.getId());
-
         return new CartResponse.CartCountResponse(cart.getTotalItemsQuantity());
     }
 
