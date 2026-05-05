@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -39,13 +41,13 @@ public class AuthService {
 
     @Transactional
     public AuthServiceResponse register(RegisterRequest request) {
-        log.debug("Processing register request - Email: {}, Username: {}",
-                request.getEmail(), request.getUsername());
+        log.debug("register.started.",
+                kv("email", request.getEmail()),
+                kv("username", request.getUsername())
+        );
 
         // Hash password
         String hashedPassword = passwordEncoder.encode(request.getPassword());
-
-        log.debug("Password hashed successfully");
 
         // Create new user
         User user = new User();
@@ -58,6 +60,10 @@ public class AuthService {
         try {
             user = userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
+            log.warn("register.conflict: email or username already registered.",
+                    kv("email", request.getEmail()),
+                    kv("username", request.getUsername())
+            );
             throw new ConflictException("Email or Username already registered.");
         }
 
@@ -70,13 +76,15 @@ public class AuthService {
         // Add refresh to repo
         addRefreshToRepository(refresh, user);
 
-        log.info("User {} registered successfully", user.getId());
+        log.info("register.success.",
+                kv("userId", user.getId())
+        );
 
         // Build response
         UserResponse userRes = mapToUserResponse(user);
 
         return new AuthServiceResponse(
-                "Registration Successful.",
+                "Registration successful.",
                 access,
                 refresh,
                 userRes
@@ -85,7 +93,7 @@ public class AuthService {
 
     @Transactional
     public AuthServiceResponse login(LoginRequest request) {
-        log.debug("Processing login request - Email: {}", request.getEmail());
+        log.debug("login.started.");
 
         // Check existing user
         User user = userRepository.findByEmail(request.getEmail())
@@ -93,13 +101,15 @@ public class AuthService {
 
         // If user not found
         if (user == null) {
-            log.warn("Login failed - email not found: email={}", request.getEmail());
+            log.warn("login.failed: user not found.");
             throw new UnauthorizedException("Invalid username or password.");
         }
 
         // Check password
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            log.warn("Login failed - password not match: email={}", request.getEmail());
+            log.warn("login.failed: password mismatch.",
+                    kv("userId", user.getId())
+            );
             throw new UnauthorizedException("Invalid username or password.");
         }
 
@@ -123,7 +133,9 @@ public class AuthService {
         // Add refresh to repo
         addRefreshToRepository(refresh, user);
 
-        log.info("User {} logged in successfully", user.getId());
+        log.info("login.success.",
+                kv("userId", user.getId())
+        );
 
         // Build response
         UserResponse userRes = mapToUserResponse(user);
@@ -138,7 +150,7 @@ public class AuthService {
 
     @Transactional
     public AuthServiceResponse refresh(String refresh) {
-        log.debug("Processing refresh request.");
+        log.debug("refresh.started.");
 
         // Validate token & parse claims
         Claims claims = jwtTokenProvider.validateToken(refresh);
@@ -150,18 +162,20 @@ public class AuthService {
 
         // Make sure Jwt claims exists
         if (userId == null) {
-            log.warn("Refresh failed - User not found on refresh");
+            log.warn("refresh.failed: userId claim missing.");
             throw new UnauthorizedException("Invalid refresh token.");
         }
 
         if (email == null) {
-            log.warn("Refresh failed - Email not found on refresh");
+            log.warn("refresh.failed: email claim missing.");
             throw new UnauthorizedException("Invalid refresh token.");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    log.warn("User {} not found", userId);
+                    log.warn("refresh.failed: user not found.",
+                            kv("userId", userId)
+                    );
                     return new NotFoundException("User not found.");
                 });
 
@@ -169,13 +183,17 @@ public class AuthService {
         RefreshToken curRefresh = refreshTokenRepository
                 .findByUser_IdAndRefreshAndRevokedIsFalse(userId, refresh)
                 .orElseThrow(() -> {
-                    log.warn("Unrevoked refresh token not found for user {}", userId);
+                    log.warn("refresh.failed: active refresh token not found.",
+                            kv("userId", userId)
+                    );
                     return new UnauthorizedException("Active refresh token not found.");
                 });
 
         // Check if refresh is expired
         if (curRefresh.isExpired()) {
-            log.warn("Refresh token expired for user {}", userId);
+            log.warn("refresh.failed: refresh token expired.",
+                    kv("refreshId", curRefresh.getId())
+            );
             throw new UnauthorizedException("Invalid refresh token.");
         }
 
@@ -191,11 +209,15 @@ public class AuthService {
         // Add refresh to repo
         addRefreshToRepository(newRefresh, user);
 
+        log.info("refresh.success.",
+                kv("userId", user.getId())
+        );
+
         // Build response
         UserResponse userRes = mapToUserResponse(user);
 
         return new AuthServiceResponse(
-                "Refresh Successful.",
+                "Refresh successful.",
                 access,
                 newRefresh,
                 userRes
@@ -204,23 +226,30 @@ public class AuthService {
 
     @Transactional
     public AuthResponse logout(Long userId, String refresh) {
-        log.debug("Processing logout request - User: {}", userId);
+        log.debug("logout.started.");
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    log.warn("User {} not found", userId);
+                    log.warn("logout.failed: user not found.",
+                            kv("userId", userId)
+                    );
                     return new NotFoundException("User not found.");
                 });
 
-        RefreshToken refreshToken = refreshTokenRepository
+        // Check if refresh token is valid (if not, user are already log out)
+        refreshTokenRepository
                 .findByUser_IdAndRefreshAndRevokedIsFalse(userId, refresh)
                 .orElseThrow(() -> {
-                    log.warn("Unrevoked refresh token not found - User: {}", userId);
-                    return new UnauthorizedException("Active refresh token not found.");
+                    log.warn("logout.failed: active refresh token not found.");
+                    return new UnauthorizedException("Refresh token not found o expired.r");
                 });
 
         // (For Safety) Revoke all active refresh tokens
         refreshTokenRepository.revokeAllUnrevokedByUser_Id(userId);
+
+        log.info("logout.success.",
+                kv("userId", user.getId())
+        );
 
         UserResponse userRes = mapToUserResponse(user);
 
@@ -235,13 +264,9 @@ public class AuthService {
 
         Instant expiryDate = Instant.now().plusMillis(refreshExpirationInMs);
 
-        RefreshToken refreshToken = new RefreshToken(
-                user, refresh, expiryDate);
-
-        refreshToken = refreshTokenRepository.save(refreshToken);
-
-        log.debug("User {} successfully added refresh token to repository",
-                user.getId());
+        // Create and save
+        RefreshToken refreshToken = new RefreshToken(user, refresh, expiryDate);
+        refreshTokenRepository.save(refreshToken);
     }
 
     private UserResponse mapToUserResponse(User user) {

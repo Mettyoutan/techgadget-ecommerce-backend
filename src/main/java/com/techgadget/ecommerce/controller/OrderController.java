@@ -152,7 +152,7 @@ public class OrderController {
 
 
         PaginatedResponse<OrderResponse> response = orderService
-                .getUserOrders(userDetails.getUserId(), filter);
+                .searchUserOrders(userDetails.getUserId(), filter);
 
         return ResponseEntity.ok(response);
     }

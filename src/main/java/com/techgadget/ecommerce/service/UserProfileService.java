@@ -17,6 +17,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -28,27 +30,27 @@ public class UserProfileService {
     @Transactional(readOnly = true)
     public UserProfileResponse getUserProfile(Long userId) {
 
-        log.debug("Processing get user profile - User: {}", userId);
+        log.debug("getUserProfile.started.");
 
         User user = userRepository.findByIdWithAddress(userId)
                 .orElseThrow(() -> {
-                    log.warn("User with id {} not found", userId);
+                    log.warn("getUserProfile.failed: user not found.");
                     return new NotFoundException("User not found.");
                 });
 
-        log.info("Successfully retrieved user profile - User: {}", userId);
-
-        return mapToUserProfile(user);
+        UserProfileResponse response = mapToUserProfile(user);
+        log.debug("getUserProfile.success.");
+        return response;
     }
 
     @Transactional
     public UserProfileResponse addAddress(Long userId, CreateAddressRequest request) {
 
-        log.debug("Processing add address request - User: {}", userId);
+        log.debug("addAddress.started.");
 
         User user = userRepository.findByIdWithAddress(userId)
                 .orElseThrow(() -> {
-                    log.warn("User with id {} not found", userId);
+                    log.warn("addAddress.failed: user not found");
                     return new NotFoundException("User not found.");
                 });
 
@@ -67,7 +69,9 @@ public class UserProfileService {
         user.addAddress(address);
         userRepository.save(user);
 
-        log.info("User {} successfully added address {}", userId, address.getId());
+        log.info("addAddress.success.",
+                kv("addressId", address.getId())
+        );
 
         return mapToUserProfile(user);
     }

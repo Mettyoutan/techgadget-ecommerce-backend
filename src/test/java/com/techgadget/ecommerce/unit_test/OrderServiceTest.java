@@ -400,7 +400,7 @@ public class OrderServiceTest {
 
             OrderFilterRequest filter = buildFilter("INVALID_STATUS");
 
-            assertThatThrownBy(() -> orderService.getUserOrders(1L, filter))
+            assertThatThrownBy(() -> orderService.searchUserOrders(1L, filter))
                     .isInstanceOf(BadRequestException.class)
                     .hasMessageContaining("Invalid order status.");
         }
@@ -417,7 +417,7 @@ public class OrderServiceTest {
             when(orderRepository.findUserOrders(eq(1L), isNull(), any(Pageable.class)))
                     .thenReturn(page);
 
-            PaginatedResponse<OrderResponse> response = orderService.getUserOrders(1L, filter);
+            PaginatedResponse<OrderResponse> response = orderService.searchUserOrders(1L, filter);
 
             assertThat(response).isNotNull();
             assertThat(response.getTotalElements()).isEqualTo(1L);
@@ -438,7 +438,7 @@ public class OrderServiceTest {
             when(orderRepository.findUserOrders(eq(1L), eq(OrderStatus.PENDING), any(Pageable.class)))
                     .thenReturn(page);
 
-            PaginatedResponse<OrderResponse> response = orderService.getUserOrders(1L, filter);
+            PaginatedResponse<OrderResponse> response = orderService.searchUserOrders(1L, filter);
 
             assertThat(response.getTotalElements()).isEqualTo(1L);
             verify(orderRepository, times(1))
@@ -459,7 +459,7 @@ public class OrderServiceTest {
                     eq(1L), isNull(), any(), any(Pageable.class)))
                     .thenReturn(page);
 
-            PaginatedResponse<OrderResponse> response = orderService.getUserOrders(1L, filter);
+            PaginatedResponse<OrderResponse> response = orderService.searchUserOrders(1L, filter);
 
             assertThat(response.getTotalElements()).isEqualTo(1L);
             verify(orderRepository, times(1))
@@ -480,7 +480,7 @@ public class OrderServiceTest {
                     eq(1L), isNull(), any(), any(Pageable.class)))
                     .thenReturn(page);
 
-            PaginatedResponse<OrderResponse> response = orderService.getUserOrders(1L, filter);
+            PaginatedResponse<OrderResponse> response = orderService.searchUserOrders(1L, filter);
 
             assertThat(response.getTotalElements()).isEqualTo(1L);
             verify(orderRepository, times(1))
@@ -502,7 +502,7 @@ public class OrderServiceTest {
                     eq(1L), isNull(), any(), any(), any(Pageable.class)))
                     .thenReturn(page);
 
-            PaginatedResponse<OrderResponse> response = orderService.getUserOrders(1L, filter);
+            PaginatedResponse<OrderResponse> response = orderService.searchUserOrders(1L, filter);
 
             assertThat(response.getTotalElements()).isEqualTo(1L);
             verify(orderRepository, times(1))

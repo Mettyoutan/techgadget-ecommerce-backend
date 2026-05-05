@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -41,18 +43,22 @@ public class ProductReviewService {
             CreateProductReviewRequest request
     ) {
 
-        log.debug("Processing create review - User: {}, Product: {}, Rating: {}",
-                userId, productId, request.getRating());
+        log.debug("createReview.started.",
+                kv("productId", productId),
+                kv("rating", request.getRating())
+        );
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    log.warn("User not found with id {}", userId);
+                    log.warn("createReview.failed: user not found");
                     return new NotFoundException("User not found");
                 });
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
-                    log.warn("Product not found with id {}", productId);
+                    log.warn("createReview.failed: product not found",
+                            kv("productId", productId)
+                    );
                     return new NotFoundException("Product not found");
                 });
 
@@ -66,7 +72,7 @@ public class ProductReviewService {
             OrderItem item = order.getItems().stream()
                     .filter(i ->
                             i.getProductIdSnapshot().equals(productId)
-                            && !i.isReviewed()
+                            && !i.isReviewed() // isReviewed checking
                     )
                     .findFirst()
                     .orElse(null);
@@ -77,8 +83,9 @@ public class ProductReviewService {
         }
 
         if (toBeReviewedItem == null) {
-            log.warn("User {} tried to review Product {} but hasn't been ordered or already been reviewed",
-                    userId, productId);
+            log.warn("createReview.failed: no reviewable order item found.",
+                    kv("productId", productId)
+            );
             throw new ConflictException("Product has not been ordered or already been reviewed.");
         }
 
@@ -92,8 +99,10 @@ public class ProductReviewService {
         );
         productReviewRepository.save(productReview);
 
-        log.info("User {} successfully created review {} for product {}",
-                userId, productReview.getId(), productId);
+        log.info("createReview.success",
+                kv("reviewId", productReview.getId()),
+                kv("productId", productId)
+        );
 
         return mapProductReviewToResponse(productReview);
     }
@@ -107,7 +116,11 @@ public class ProductReviewService {
             String sortDir
     ) {
 
-        log.debug("Processing get single product reviews - Product: {}", productId);
+        log.debug("getSingleProductReviews.started",
+                kv("productId", productId),
+                kv("page", page),
+                kv("size", size)
+        );
 
         Sort.Direction direction = getDirection(sortDir);
 
@@ -120,8 +133,10 @@ public class ProductReviewService {
         Page<ProductReview> productReviewPage = productReviewRepository
                 .findByProduct_IdWithRelation(productId, pageable);
 
-        log.info("Successfully fetched {} product reviews for product {}",
-                productReviewPage.getTotalElements(), productId);
+        log.debug("getSingleProductReviews.success",
+                kv("productId", productId),
+                kv("totalElements", productReviewPage.getTotalElements())
+        );
 
         return mapPageToResponse(productReviewPage);
     }
@@ -134,7 +149,9 @@ public class ProductReviewService {
         try {
             direction = Sort.Direction.fromString(sortDir);
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid sort direction '{}', defaulting to DESC", sortDir);
+            log.warn("getSingleProductReviews.fallback: invalid sort direction, defaulting to DESC",
+                    kv("sortDir", sortDir)
+            );
             direction = Sort.Direction.DESC;
         }
         return direction;

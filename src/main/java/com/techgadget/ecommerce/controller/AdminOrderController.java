@@ -78,7 +78,7 @@ public class AdminOrderController {
             @PathVariable Long userId
     ) {
         PaginatedResponse<OrderResponse> response =
-                orderService.getUserOrders(userId, filter);
+                orderService.searchUserOrders(userId, filter);
 
         return ResponseEntity.ok(response);
     }

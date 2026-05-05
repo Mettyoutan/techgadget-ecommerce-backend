@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -34,17 +36,26 @@ public class ProductImageService {
     @Transactional
     public ImageResponse upload(Long productId, MultipartFile file, boolean isPrimary) {
 
+        log.debug("uploadProductImage.started.",
+                kv("productId", productId),
+                kv("isPrimary", isPrimary)
+        );
+
         Product product = productRepository.findProductDetailById(productId)
                 .orElseThrow(() -> {
-                    log.warn("Product {} not found.", productId);
+                    log.warn("uploadProductImage.failed: product not found.",
+                            kv("productId", productId)
+                    );
                     return new NotFoundException("Product not found.");
                 });
 
         // Get all product images
         List<ProductImage> images = product.getImages();
 
-        // Store image into MinIO
+        // Generate unique original key
         String originalKey = generateOriginalKey(productId, file);
+
+        // Store image into MinIO
         StoredImageDto imageDto = minioStorageService.store(file, originalKey);
 
         // Create product image & save
@@ -76,7 +87,6 @@ public class ProductImageService {
         }
 
         productImageRepository.save(createdImage);
-
         productRepository.save(product);
 
         // If thumbnail exists, use thumbnail key to get Url
@@ -87,6 +97,12 @@ public class ProductImageService {
         } else {
             imageUrl = getImageUrl(createdImage.getOriginalKey());
         }
+
+        log.info("uploadProductImage.success.",
+                kv("productId", productId),
+                kv("imageId", createdImage.getId()),
+                kv("isPrimary", createdImage.isPrimary())
+        );
 
         return new ImageResponse(
                 imageUrl,
@@ -101,10 +117,17 @@ public class ProductImageService {
     @Transactional
     public void delete(Long productId, Long productImageId) {
 
+        log.debug("deleteProductImage.started.",
+                kv("productId", productId),
+                kv("imageId", productImageId)
+        );
+
         // Get product
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> {
-                    log.warn("Product {} not found.", productId);
+                    log.warn("deleteProductImage.failed: product not found.",
+                            kv("productId", productId)
+                    );
                     return new NotFoundException("Product not found.");
                 });
 
@@ -112,8 +135,10 @@ public class ProductImageService {
         ProductImage image = productImageRepository
                 .findByIdAndProduct_Id(productImageId, productId)
                 .orElseThrow(() -> {
-                    log.warn("Product image {} not found - Product:{}",
-                            productImageId, productId);
+                    log.warn("deleteProductImage.failed: product image not found.",
+                            kv("productId", productId),
+                            kv("imageId", productImageId)
+                    );
                     return new NotFoundException("Product image not found.");
                 });
 
@@ -141,8 +166,12 @@ public class ProductImageService {
         }
 
         productImageRepository.delete(image);
-
         productRepository.save(product);
+
+        log.info("deleteProductImage.success.",
+                kv("productId", productId),
+                kv("imageId", productImageId)
+        );
     }
 
     /**

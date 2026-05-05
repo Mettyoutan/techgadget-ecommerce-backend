@@ -21,9 +21,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
+
+import static net.logstash.logback.argument.StructuredArguments.*;
 
 @Service
 @Slf4j
@@ -46,17 +48,23 @@ public class ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResponse getProductById(Long productId) {
 
-        log.debug("Processing get product by id - Product: {}", productId);
+        log.debug("getProductById.started.",
+                kv("productId", productId)
+        );
 
         Product product = productRepository
                 .findProductDetailById(productId) // Get single detail product
                 .orElseThrow(() -> {
-                    log.warn("Product not found with id {}", productId);
+                    log.warn("getProductById.failed: product not found.",
+                            kv("productId", productId)
+                    );
                     return new NotFoundException("Product not found.");
                 });
 
 
-        log.info("Successfully fetched product {}", product.getId());
+        log.debug("getProductById.success.",
+                kv("productId", product.getId())
+        );
 
         return mapToProductDetailResponse(product);
     }
@@ -77,17 +85,16 @@ public class ProductService {
         String sortBy = request.getSortBy();
         String sortDir = request.getSortDir();
 
-        log.debug("Search products with filter - " +
-                "ProductName: {}, Category: {}, MinPrice: {}, " +
-                "MaxPrice: {}, Page: {}, Size: {}, SortBy: {}, SortDir: {}",
-                name,
-                categoryId,
-                minPrice,
-                maxPrice,
-                page,
-                size,
-                sortBy,
-                sortDir);
+        log.debug("searchProducts.started.",
+                kv("name", name),
+                kv("categoryId", categoryId),
+                kv("minPrice", minPrice),
+                kv("maxPrice", maxPrice),
+                kv("page", page),
+                kv("size", size),
+                kv("sortBy", sortBy),
+                kv("sortDir", sortDir)
+        );
 
         Sort.Direction direction = resolveDirection(sortDir);
         String sortField = resolveSortField(sortDir);
@@ -103,6 +110,9 @@ public class ProductService {
         if (categoryId != null) {
             // make sure category exists
             if (!productRepository.existsByCategory_Id(categoryId)) {
+                log.warn("searchProducts.failed: category not found.",
+                        kv("categoryId", categoryId)
+                );
                 throw new NotFoundException("Category not found.");
             }
 
@@ -120,8 +130,6 @@ public class ProductService {
                         name, categoryId, minPrice, maxPrice, pageable);
             }
 
-            log.debug("Running query -> productRepository.searchByNameAndCategory_IdAndPrice");
-
         } else {
             if (minPrice == null && maxPrice == null) {
                 productPage = productRepository.findProductListByName(
@@ -137,11 +145,13 @@ public class ProductService {
                         name, minPrice, maxPrice, pageable);
             }
 
-            log.debug("Running query -> productRepository.searchByNameAndPrice");
         }
 
-        log.info("Successfully fetched {} products using advanced search - Page: {}/{}",
-                productPage.getNumberOfElements(), page, productPage.getTotalPages());
+        log.debug("searchProducts.success.",
+                kv("totalElements", productPage.getNumberOfElements()),
+                kv("page", page),
+                kv("totalPages", productPage.getTotalPages())
+        );
 
         return mapToPaginatedProductListResponse(productPage);
     }
@@ -153,12 +163,20 @@ public class ProductService {
     @Transactional
     public ProductDetailResponse createProduct(CreateProductRequest request) {
 
-        log.debug("Processing create product (ADMIN) - Category: {}, ProductName: {}, Stock: {}",
-                request.getCategoryId(), request.getName(), request.getStock());
+        log.debug("createProduct.started.",
+                kv("categoryId", request.getCategoryId()),
+                kv("name", request.getName()),
+                kv("stock", request.getStock())
+        );
 
         // Check if category exists
         Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new NotFoundException("Category not found."));
+                .orElseThrow(() -> {
+                    log.warn("createProduct.failed: category not found.",
+                            kv("categoryId", request.getCategoryId())
+                    );
+                    return new NotFoundException("Category not found.");
+                });
 
         // Create new product (WITHOUT image)
         Product product = new Product(
@@ -172,10 +190,11 @@ public class ProductService {
 
         productRepository.save(product);
 
-        log.info("Successfully created product {} - Price: {}, Stock: {}",
-                product.getId(),
-                product.getPrice(),
-                product.getStock());
+        log.info("createProduct.success.",
+                kv("productId", product.getId()),
+                kv("price", product.getPrice()),
+                kv("stock", product.getStock())
+        );
 
         return mapToProductDetailResponse(product);
     }
@@ -186,12 +205,19 @@ public class ProductService {
     @Transactional
     public void deductStock(Long productId, int quantity) {
 
-        log.debug("Processing deduct stock by {} quantity - Product: {}",
-                productId, quantity);
+        log.debug("deductStock.started.",
+                kv("productId", productId),
+                kv("quantity", quantity)
+        );
 
         // Find product without any relation
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new NotFoundException("Product not found."));
+                .orElseThrow(() -> {
+                    log.warn("deductStock.failed: product not found.",
+                            kv("productId", productId)
+                    );
+                    return new NotFoundException("Product not found.");
+                });
 
         // Decrease the stock quantity
         product.decreaseStock(quantity);
@@ -199,8 +225,10 @@ public class ProductService {
         // Saved
         productRepository.save(product);
 
-        log.info("Successfully deducted stock by {} quantity for product {} - ",
-                productId, quantity);
+        log.info("Product quantity deducted successfully. [{}, {}]",
+                kv("productId", productId),
+                kv("remainingStock", product.getStock())
+        );
     }
 
     /**
@@ -213,7 +241,9 @@ public class ProductService {
         try {
             direction = Sort.Direction.fromString(sortDir);
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid sort direction '{}', defaulting to DESC", sortDir);
+            log.warn("resolveDirection.fallback: invalid sort direction, defaulting to DESC.",
+                    kv("sortDir", sortDir)
+            );
             direction = Sort.Direction.DESC;
         }
         return direction;
@@ -290,7 +320,7 @@ public class ProductService {
     private ProductDetailResponse mapToProductDetailResponse(Product product) {
 
 
-        // Get all image urls for product detail
+        // Get all image urls for product detail (using image key)
         List<ImageResponse> imageResponses = product.getImages()
                 .stream()
                 .map(i -> {
@@ -299,6 +329,7 @@ public class ProductService {
                             ? i.getThumbnailKey()
                             : i.getOriginalKey();
 
+                    // Fetch image url
                     String url = productImageService.getImageUrl(imageKey);
                     if (url == null) return null;
 

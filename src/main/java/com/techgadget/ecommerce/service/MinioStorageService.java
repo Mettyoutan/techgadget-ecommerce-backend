@@ -6,6 +6,7 @@ import com.techgadget.ecommerce.exception.InternalServerException;
 import io.minio.*;
 import io.minio.errors.*;
 import io.minio.http.Method;
+import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
@@ -17,6 +18,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
+
+import static net.logstash.logback.argument.StructuredArguments.kv;
 
 @Service
 @Slf4j
@@ -48,14 +51,22 @@ public class MinioStorageService {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
         } catch (Exception e) {
+            log.error("ensureBucketExists.failed: {}.", e.getMessage(), e);
             throw new InternalServerException();
         }
+
+        log.info("Bucket exists!", kv("bucket", bucket));
     }
 
     /**
      * Store object & create thumbnail (Optional)
      */
     public StoredImageDto store(MultipartFile file, String originalKey) {
+
+        log.debug("store.started.",
+            kv("originalKey", originalKey),
+            kv("fileSize", file.getSize())
+        );
 
         try (InputStream is = file.getInputStream()) {
             // Upload original image object
@@ -75,15 +86,21 @@ public class MinioStorageService {
 
         } catch (ErrorResponseException e) {
             String code = e.errorResponse().code();
-            log.warn("MinIO failed to store image - Bucket={}, OriginalKey={}, Code={}",
-                    bucket, originalKey, e.errorResponse().code(), e
+            log.warn("store.failed: MinIO failure.",
+                    kv("bucket", bucket),
+                    kv("originalKey", originalKey),
+                    kv("errorCode", e.errorResponse().code()),
+                    e
             );
             if ("EntityTooLarge".equals(code)) {
                 throw new ContentTooLargeException("Uploaded image is too large");
             }
             throw new InternalServerException();
         } catch (Exception e) {
-            log.error("Unexpected error while storing image - ObjectKey={}", originalKey, e);
+            log.error("store.failed: unexpected error while storing image.",
+                    kv("originalKey", originalKey),
+                    e
+            );
             throw new InternalServerException();
         }
     }
@@ -92,6 +109,9 @@ public class MinioStorageService {
      * Delete object
      */
     public void delete(String objectKey) {
+
+
+
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
@@ -108,7 +128,12 @@ public class MinioStorageService {
     /**
      * Get presigned url (GET method)
      */
-    public String generateViewUrl(String objectKey) {
+    public @Nullable String generateViewUrl(String objectKey) {
+
+        log.debug("generateViewUrl.started.",
+                kv("objectKey", objectKey)
+        );
+
         try {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
@@ -119,7 +144,9 @@ public class MinioStorageService {
                             .build()
             );
         } catch (Exception e) {
-            log.warn("Failed to get presigned url - ObjectKey={}", objectKey, e);
+            log.warn("generateViewUrl.failed: MinIO failed to get presigned url.",
+                    kv("objectKey", objectKey)
+            );
             return null; // Image is skipped
         }
     }
@@ -129,7 +156,7 @@ public class MinioStorageService {
      * -
      * Return thumbnailKey / null
      */
-    private String uploadThumbnail(MultipartFile file, String originalKey) {
+    private @Nullable String uploadThumbnail(MultipartFile file, String originalKey) {
 
         // giraffe.jpg -> giraffe-thumb.jpg
         String thumbKey = originalKey.replace(".", "-thumb.");
@@ -157,8 +184,11 @@ public class MinioStorageService {
             return thumbKey;
 
         } catch (Exception e) {
-            log.warn("Failed to upload thumbnail - Bucket={}, ThumbKey={}",
-                    bucket, thumbKey);
+            log.warn("uploadThumbnail.failed: {}.",
+                    e.getMessage(),
+                    kv("bucket", bucket),
+                    kv("thumbKey", thumbKey)
+            );
             return null; // Thumbnail OPTIONAL
         }
 

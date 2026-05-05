@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -35,18 +37,23 @@ public class PaymentService {
     @Transactional
     public OrderResponse payOrder(Long userId, Long orderId) {
 
-        log.debug("Processing pay order - User: {}, Order: {}",
-                userId, orderId);
+        log.debug("payOrder.started.",
+                kv("orderId", orderId)
+        );
 
         Order order = orderRepository.findUserOrderById(orderId, userId)
                 .orElseThrow(() -> {
-                    log.warn("Order not found with id = {} and user id = {}", orderId, userId);
+                    log.warn("payOrder.failed: order not found.",
+                            kv("orderId", orderId)
+                    );
                     return new NotFoundException("Order not found with id = " + orderId);
                 });
 
         if (order.getOrderStatus() != OrderStatus.PENDING) {
-            log.warn("Cannot cancel order with id {} because status is {}",
-                    orderId, order.getOrderStatus());
+            log.warn("payOrder.failed: order not in PENDING status.",
+                    kv("orderId", orderId),
+                    kv("currentStatus", order.getOrderStatus())
+            );
             throw new ConflictException("Only PENDING order can be cancelled");
         }
 
@@ -57,7 +64,10 @@ public class PaymentService {
 
         orderRepository.save(order);
 
-        log.info("Order {} marked as PAID by User {}", orderId, userId);
+        log.info("payOrder.success.",
+                kv("orderId", orderId),
+                kv("paymentStatus", PaymentStatus.PAID)
+        );
 
         return mapToOrderResponse(order);
     }
